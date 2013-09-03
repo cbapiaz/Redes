@@ -74,9 +74,7 @@ int main(int argc, _TCHAR* argv[])
 	addr.sin_port = htons(DEFAULT_PORT);   // Assign port to this socket
 	addr.sin_addr.s_addr = inet_addr(DEFAULT_ADDR); //INADDR_ANY; 
 
-	/*ulAddr = 
-	addr.sin_addr.s_addr = ulAddr;*/
-
+	
 	if (bind(sck, (LPSOCKADDR)&addr, sizeof(addr)) == SOCKET_ERROR)
 	{
 		//We couldn't bind (this will happen if you try to bind to the same  
