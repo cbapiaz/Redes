@@ -35,22 +35,24 @@ int main(void)
    connect(client_socket, res->ai_addr, res->ai_addrlen);
    
    //primitiva SEND
-   string msg; /*const  = "Mensaje de prueba"*/   
-//   cin>> msg;
-   getline (cin, msg);
+   string msg=""; 
+   
+   while (msg.compare("quit") != 0) {
+   
+      getline (cin, msg);
 
-   int msg_size = strlen((char*)msg.c_str());
-   int sent_msg_size = send(client_socket, (char*)msg.c_str(), msg_size, 0);
-   
-   printf("Enviado al servidor (%d bytes): %s\n", sent_msg_size, (char*)msg.c_str());
-   
-   //primitiva RECEIVE
-   char* data = (char*)malloc(MAXLEN);
-   int data_size = MAXLEN;
-   int received_data_size = recv(client_socket, data, data_size, 0);
-   
-   printf("Recibido del servidor (%d bytes): %s\n", received_data_size, data);
-   
+      int msg_size = strlen((char*)msg.c_str());
+      int sent_msg_size = send(client_socket, (char*)msg.c_str(), msg_size, 0);
+      
+      printf("Enviado al servidor (%d bytes): %s\n", sent_msg_size, (char*)msg.c_str());
+      
+      //primitiva RECEIVE
+      char* data = (char*)malloc(MAXLEN);
+      int data_size = MAXLEN;
+      int received_data_size = recv(client_socket, data, data_size, 0);
+      
+      printf("Recibido del servidor (%d bytes): %s\n", received_data_size, data);
+   }
    //primitiva CLOSE
    close(client_socket);
    
