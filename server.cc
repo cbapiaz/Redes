@@ -81,7 +81,7 @@ int main(int argc , char *argv[])
             for (i = 0; i < received_data_size; i++) {
                data[i] = toupper(data[i]);
             }                  
-            for (i = received_data_size+1; i < MAX_MSG_SIZE; i++) {
+            for (i = received_data_size; i < MAX_MSG_SIZE; i++) {
                data[i] = '\0';
             }
 
@@ -95,6 +95,10 @@ int main(int argc , char *argv[])
                }
                printf("Enviado al cliente (%d bytes): %s\n", sent_data_size, data);
             }
+         }
+
+         for (int i = 0; i < MAX_MSG_SIZE; i++) {
+            data[i] = '\0';
          }
 
          close(new_fd);
