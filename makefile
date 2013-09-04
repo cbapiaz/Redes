@@ -1,7 +1,14 @@
-all:
-	server
-	client
 server:
-	g++ server.cpp -o server
+	g++ server.cc -o server
 client:
-	g++ client.cpp -o client
+	g++ client.cc -o client
+all:
+	make server
+	make client
+
+clean:
+	rm *.o -f
+	rm *.out -f
+	rm server -f
+	rm client -f
+	rm *~ -f

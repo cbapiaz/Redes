@@ -6,6 +6,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
+#include <arpa/inet.h> //inet_addr
+#include <stdlib.h>
+#include <unistd.h> //close
+
+#include <string>
+#include <iostream>
+using namespace std;
+
 #define PORT "3490"
 #define HOST "localhost"
 #define MAXLEN 1024
@@ -26,14 +35,17 @@ int main(void)
    connect(client_socket, res->ai_addr, res->ai_addrlen);
    
    //primitiva SEND
-   char *msg = "Mensaje de prueba";
-   int msg_size = strlen(msg);
-   int sent_msg_size = send(client_socket, msg, msg_size, 0);
+   string msg; /*const  = "Mensaje de prueba"*/   
+//   cin>> msg;
+   getline (cin, msg);
+
+   int msg_size = strlen((char*)msg.c_str());
+   int sent_msg_size = send(client_socket, (char*)msg.c_str(), msg_size, 0);
    
-   printf("Enviado al servidor (%d bytes): %s\n", sent_msg_size, msg);
+   printf("Enviado al servidor (%d bytes): %s\n", sent_msg_size, (char*)msg.c_str());
    
    //primitiva RECEIVE
-   char* data = malloc(MAXLEN);
+   char* data = (char*)malloc(MAXLEN);
    int data_size = MAXLEN;
    int received_data_size = recv(client_socket, data, data_size, 0);
    

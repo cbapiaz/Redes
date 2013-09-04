@@ -1,15 +1,19 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h> //inet_addr
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h> //close
+
+#include <iostream>
 
 #define PORT 3490
 #define MY_IP "127.0.0.1"
 #define MAX_QUEUE 10
 #define MAX_MSG_SIZE 1024
 
-int main(void)
+int main(int argc , char *argv[])
 {
    //primitiva SOCKET
    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -38,7 +42,7 @@ int main(void)
       );
    
       //primitiva RECEIVE
-      char* data = malloc(MAX_MSG_SIZE);
+      char* data = (char*)malloc(MAX_MSG_SIZE);
       int data_size = MAX_MSG_SIZE;
       int received_data_size = recv(socket_to_client, data, data_size, 0);
       
