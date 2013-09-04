@@ -21,6 +21,12 @@ using namespace std;
 
 int main(void)
 {
+
+   struct pollfd **my_fds;                  //array of pollfd structures for poll()
+   struct pollfd *curr, *new_conn;          //so I can loop through
+   int num_fds;  
+
+
    //primitiva SOCKET
    int client_socket = socket(AF_INET, SOCK_STREAM, 0);
    
@@ -39,6 +45,10 @@ int main(void)
    
    while (msg.compare("quit") != 0) {
    
+      if (!fork()) { // process to attend client to client connection peer to peer
+         
+      }
+
       getline (cin, msg);
 
       int msg_size = strlen((char*)msg.c_str());
@@ -52,6 +62,9 @@ int main(void)
       int received_data_size = recv(client_socket, data, data_size, 0);
       
       printf("Recibido del servidor (%d bytes): %s\n", received_data_size, data);
+
+
+      
    }
    //primitiva CLOSE
    close(client_socket);
