@@ -106,12 +106,12 @@ void processPeerToPeer(int port) {
          {
             curr = &my_fds[i];
             curr->events = POLLIN | POLLPRI;
-            printf("%i: fd %i\n", i, curr->fd);
+            printf("%i: fd %i\n\r", i, curr->fd);
             curr->revents = 0;
-            send(curr->fd, "Enter some text:\n", 18, 0);
+            //send(curr->fd, "Enter some text:\n", 18, 0);
          }         
          //put all this into poll and wait for something magical to happen
-         printf("calling poll (%d sockets)\n", num_fds);
+         printf("calling poll (%d sockets)\n\r", num_fds);
          if (poll(my_fds, num_fds, TIMEOUT) == -1)
          {
             perror("poll");
@@ -119,13 +119,13 @@ void processPeerToPeer(int port) {
          }
 
 
-         printf("poll returned!\n");
+         //printf("poll returned!\n");
 
          //First item is the accepting socket....check it independently of the rest!
          curr = &my_fds[0];
          if (curr->revents != 0)
          {
-            printf("We have a new connection.\nAccept goes here...\n");
+            printf("We have a new connection.\n\rAccept goes here...\n\r");
 
             //Accept the connection
             sin_size = sizeof their_addr;
@@ -134,8 +134,8 @@ void processPeerToPeer(int port) {
             new_conn->events = POLLIN;
             new_conn->revents = 0;
 
-            printf("Connection from %s\n", inet_ntoa(their_addr.sin_addr));
-            sprintf(buff, "Your %i\n", num_fds);
+            printf("Connection from %s\n\r", inet_ntoa(their_addr.sin_addr));
+            sprintf(buff, "Your %i\n\r", num_fds);
             send(new_conn->fd, buff, 7, 0);
 
             //Add it to the poll call
@@ -166,6 +166,7 @@ void processPeerToPeer(int port) {
                         send(new_conn->fd, buff2, strlen(buff2) + 1, 0);
                      }
                   }
+                  printf("\n\r");
                }
             }
          }
@@ -178,18 +179,20 @@ int main(int argc , char *argv[])
    char* host = (char*)HOST;
    char* port = (char*)PORT;      
 
-
-   if (argc > 0) {
-      host = argv[0];
+   int port_accept = PORT_ACCEPT;
+   if (argc > 1) {
+      port_accept = atoi(argv[1]);       
+      /*host = argv[0];
       if (argc > 1) {         
          port=argv[1];
-      }
+      }*/
    }
 
 
 
    if (!fork()) { // process to attend client to client connection, peer to peer
-        processPeerToPeer(PORT_ACCEPT);
+        //printf("port inner %i", port_accept);
+        processPeerToPeer(port_accept);
    }
 
 
