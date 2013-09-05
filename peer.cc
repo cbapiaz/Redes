@@ -34,8 +34,10 @@ using namespace std;
 
 #define MAX_LISTEN 10
 
-#define SECOND 1000
-#define TIMEOUT (30 * SECOND)
+#define MILLISECONDS 1000
+#define TIMEOUT (30 * MILLISECONDS)
+
+#define MAX_BUFF_SIZE 255
 
 static int listen_socket(int port)
 {
@@ -76,7 +78,7 @@ void processPeerToPeer(int port) {
    struct pollfd *curr, *new_conn;          //so I can loop through   
    int num_fds=0;                             //count of how many are being used
    int i, j;                                //for loops
-   char buff[255], buff2[255];              //for sending and recieving text
+   char buff[MAX_BUFF_SIZE], buff2[MAX_BUFF_SIZE];              //for sending and recieving text
    struct sockaddr_in my_addr, their_addr;  // my address information
    socklen_t sin_size;
    int buff_sz;                             //size of data recieved
@@ -151,7 +153,7 @@ void processPeerToPeer(int port) {
                curr = &my_fds[i];
                if (curr->revents != 0)
                {
-                  buff_sz = recv(curr->fd, &buff, 254, 0);
+                  buff_sz = recv(curr->fd, &buff, MAX_BUFF_SIZE, 0);
                   buff[buff_sz] = '\0';
                   printf("Recieved: %s", buff);
 
