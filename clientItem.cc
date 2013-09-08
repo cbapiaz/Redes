@@ -10,7 +10,7 @@ typedef struct client
 {
         	string ip;
 			string port;
-}client;
+} client;
 
 /** create a new client */
 client * client_create (string ip, string port)

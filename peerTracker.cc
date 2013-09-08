@@ -51,12 +51,14 @@ void error(const char *msg)
 }
 
 void print_clients (map<string, client*> m){
-	cout << "Los clientes registrados son \n";
-for(std::map<string, client*>::const_iterator it = m.begin(); it != m.end(); it++)
-{
-	cout << it->first <<  "\n"; ;
-	//Do something
-}
+	  cout << "Los clientes registrados son \n";
+    int i =0;
+    for(std::map<string, client*>::const_iterator it = m.begin(); it != m.end(); it++)
+    {
+    	cout << "Client Nr "<<i<<": "<< client_getcIp(it->second) << "@" << client_getcPort(it->second) <<  "\n"; ;
+    	//Do something
+      i++;
+    }
 }
 
 
@@ -92,9 +94,7 @@ static int listen_socket(int port)
 }
 
 
-void pollserver(int port_accept) {
-   //struct pollfd **my_fds;                  //array of pollfd structures for poll()
-   //struct pollfd **my_fds;
+void pollserver(int port_accept) {   
    
    bool order_fds;
    struct pollfd my_fds[MAX_CONN];
@@ -159,9 +159,7 @@ void pollserver(int port_accept) {
 				new_conn->events = POLLIN;
 				new_conn->revents = 0;
 
-				//printf("Connection from %s\n\r", inet_ntoa(their_addr.sin_addr));
-				//sprintf(buff, "Your cero %i\n\r", num_fds);
-				//send(new_conn->fd, buff, 7, 0);
+				
 
 				//Add it to the poll call
 				my_fds[num_fds] = *new_conn;
@@ -206,14 +204,17 @@ int main(int argc, char *argv[])
      socklen_t clilen;
      char buffer[256];
      struct sockaddr_in serv_addr, cli_addr;
+
      int n;
      if (argc < 2) {
          fprintf(stderr,"ERROR, no port provided\n");
          exit(1);
      }
+
      sockfd = socket(AF_INET, SOCK_STREAM, 0);
      if (sockfd < 0) 
         error("ERROR opening socket");
+
      bzero((char *) &serv_addr, sizeof(serv_addr));
      portno = atoi(argv[1]);     
      
