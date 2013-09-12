@@ -5,6 +5,7 @@
 #include<stdlib.h>
 #include <string>
 
+#include "fileHelper.hh"
 using namespace std;
 
 typedef struct client client;

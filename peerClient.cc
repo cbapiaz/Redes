@@ -117,6 +117,29 @@ void order(struct pollfd fds[MAX_CONN], int nfds)
   }
 }
 
+#define MAX_BUFF_SIZE 1000
+
+void get_all_buf(int sock, std::string & inStr, int &totalSize) {
+    int n = 1, total = 0, found = 0;
+    char c;
+    char temp[1024*1024];
+
+    // Keep reading up to a '\n'
+    while (!found) {
+        n = recv(sock, &temp[total], sizeof(temp) - total - 1, 0);
+        if (n == -1) {
+            /* Error, check 'errno' for more details */
+            break;
+        }
+        total += n;
+        temp[total] = '\0';
+        found = (strchr(temp, '\n') != 0);
+    }
+
+    totalSize = total-2;
+    inStr = temp;
+    inStr = inStr.substr(0, inStr.size()-2); //all characters except the line break
+}
 
 void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
    
@@ -127,7 +150,8 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
    struct pollfd *curr, *new_conn;          //so I can loop through   
    int num_fds=0;                             //count of how many are being used
    int i;                                //for loops
-   char buff[255], buff2[255], buff3[255];              //for sending and recieving text
+   char buff[MAX_BUFF_SIZE];
+   char buff2[MAX_BUFF_SIZE], buff3[MAX_BUFF_SIZE];              //for sending and recieving text
    struct sockaddr_in their_addr;  // my address information
    socklen_t sin_size;
    int buff_sz;                             //size of data recieved
@@ -155,6 +179,8 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 
     //Inicializo la cantidad de fds en 2
     num_fds = 2;
+
+    // buff = (char*)malloc(MAX_BUFF_SIZE);         
 
      while (num_fds < MAX_CONN)
      {
@@ -219,17 +245,27 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 
 			 if ((i == console) && (curr->revents != 0))
 			   { 
+                  
+                  // para atender a la consola
+                  string out;
+                  while (out.compare("quit")!=0) {
+                      int size ;
+    				  get_all_buf(curr->fd,out,size);
 
-				  buff_sz = recv(curr->fd, &buff, 254, 0);
-				  buff[buff_sz] = '\0';
-				  
-				  cout << "pedido de consola" << "\n"; 
-				  cout << "comando: " << buff << "\n";
+                      /*buff_sz = recv(curr->fd, buff, sizeof(buff), 0);
+    				  buff[buff_sz] = '\0';*/
+    				  
+    				  cout << "pedido de consola" << "\n"; 
+    				  cout << "comando: " << out <<"\n";                      
+                      
+                  }
 				  // en buff queda gurdado lo que recibo por telnet
 				  
 				  
 				  //envio al servidor lo que me llego por telnet
 				  
+
+
 				  send(serv_socket, buff, strlen(buff) + 1, 0);
 				  
 				  //recibo la rspuesta del sevidor,por ahora es un numero de puerto

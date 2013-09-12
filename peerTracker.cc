@@ -25,6 +25,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <openssl/md5.h>
+
 using namespace std;
 
 #include "clientItem.hh"
