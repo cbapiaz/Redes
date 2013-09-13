@@ -29,7 +29,7 @@ typedef struct client
 } client;
 
 
-
+#define BASE_DIR "share/"
 /** create a new client */
 client * client_create (string ip, string port)
 {
@@ -58,13 +58,20 @@ void client_destroy (client *cli){
 
 void share_file(client *cli,string file) {
 	if (cli != NULL) {		 
-		 cli->files[cli->nr_files].name = file;
 		 int fd; unsigned long size;
-		 cli->files[cli->nr_files].md5 = getMD5(file,fd,size);
-		 cli->files[cli->nr_files].fd = fd;
-		 cli->files[cli->nr_files].size = size;
+		 string _md5 = getMD5(BASE_DIR + file,fd,size);
 
-		 cli->nr_files++;
+   	     if (_md5.size() > 0) {
+			 cli->files[cli->nr_files].name = file;			
+			 cli->files[cli->nr_files].md5 = _md5;
+			 cli->files[cli->nr_files].fd = fd;
+			 cli->files[cli->nr_files].size = size;
+
+			 cli->nr_files++;
+		 }
+		 else {
+		 	perror("\nCannot share file, error calculating md5\n");
+		 }
 	}
 	else perror ("share_file: client should not be null");
 }

@@ -8,6 +8,9 @@
 #include "fileHelper.hh"
 using namespace std;
 
+
+typedef struct FileDescriptor FileDescriptor;
+
 typedef struct client client;
 
 /** create a new client */
@@ -21,5 +24,7 @@ string client_getcPort (client *cli);
 
 /** destroy client */
 void client_destroy (client *cli); 
+
+void share_file(client *cli,string file);
 
 #endif 
