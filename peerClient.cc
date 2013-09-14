@@ -292,49 +292,44 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 			   { 
                   
                   // para atender a la consola
-                  string out;
-                  while (out.compare("quit")!=0) {
-                      int size ;
-            				  get_all_buf(curr->fd,out,size);
-
-                              /*buff_sz = recv(curr->fd, buff, sizeof(buff), 0);
-            				  buff[buff_sz] = '\0';*/
-            				  
-                      if (out.find("share") != std::string::npos) { //share command
-                        //splitstring s(out);
-                        //vector<string> splitV = s.split(' ',0);
-                        string file = out.substr(6);
-                        if (file.size() > 0) {
-                          
-                          cout << "file to share:@"<<file<<"@\n";
-
-                          share_file(this_is_me,file);                          
-                        }
-                        else perror("Not enough arguments, need to specify file to share");                        
-                      }
-
-            				  cout << "pedido de consola" << "\n"; 
-            				  cout << "comando: " << out <<"\n";                      
-                      
-                  }
-				  // en buff queda gurdado lo que recibo por telnet
+          string out;              
+          int size ;
+				  get_all_buf(curr->fd,out,size);                  
 				  
-				  
-				  //envio al servidor lo que me llego por telnet
-				  
+          if (out.find("share") != std::string::npos) { //share command
+            //splitstring s(out);
+            //vector<string> splitV = s.split(' ',0);
+            string file = out.substr(6);
+            if (file.size() > 0) {
+              
+              cout << "file to share:@"<<file<<"@\n";
 
+              share_file(this_is_me,file);                          
+            }
+            else perror("Not enough arguments, need to specify file to share");                        
+          }
 
-				  send(serv_socket, buff, strlen(buff) + 1, 0);
-				  
+				  cout << "pedido de consola" << "\n"; 
+				  cout << "comando: " << out <<"\n";                      
+
+          if (out.compare("quit")==0) {         
+            //delete this_is_me;   
+            cout << "Cerrando cliente: \n";
+            exit(0);
+          }
+                                      
+				  // en out queda gurdado lo que recibo por telnet
+				  				  
+				  //envio al servidor lo que me llego por telnet				
+				  /*send(serv_socket, buff, strlen(buff) + 1, 0);				  
 				  //recibo la rspuesta del sevidor,por ahora es un numero de puerto
-				  buff_sz = recv(serv_socket, &buff2, 254, 0);				  
-				  
+				  buff_sz = recv(serv_socket, &buff2, 254, 0);				  				  
 				  //me conecto con el cliente
-				  socket_client = connect_socket (HOST,buff2);
-				  
+				  socket_client = connect_socket (HOST,buff2);				  
 				  //me comunico con el cliente
 				  cout << "me conecte al cliente del puerto " << buff2 << "\n";		  
-				  send(socket_client, buff, strlen(buff) + 1, 0);
+				  send(socket_client, buff, strlen(buff) + 1, 0);*/
+
 			   }
 			   
 			   if ((i != console) && (i > 1) && (curr->revents != 0))
