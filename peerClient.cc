@@ -51,7 +51,7 @@ using namespace std;
 
 client * this_is_me;
 
-/*class splitstring : public string {
+class splitstring : public string {
     vector<string> flds;
 public:
     splitstring(char *s) : string(s) { };
@@ -79,7 +79,7 @@ public:
             flds.push_back(buf);
         return flds;
     }
-};*/
+};
 
 
 
@@ -297,9 +297,11 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				  get_all_buf(curr->fd,out,size);                  
 				  
           if (out.find("share") != std::string::npos) { //share command
-            //splitstring s(out);
-            //vector<string> splitV = s.split(' ',0);
-            string file = out.substr(6);
+            splitstring s(out);
+            vector<string> splitV = s.split(' ',1);
+            //cout<< splitV.size()<<"\n";
+
+            string file =splitV.size() > 0 ? splitV[1] : "";//out.substr(6);
             if (file.size() > 0) {
               
               cout << "file to share:@"<<file<<"@\n";
