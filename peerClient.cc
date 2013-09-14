@@ -25,6 +25,8 @@
 
 #include "clientItem.hh"
 
+#include "Util.hh"
+
 #include <iostream>
 using namespace std;
 
@@ -50,37 +52,6 @@ using namespace std;
 
 
 client * this_is_me;
-
-class splitstring : public string {
-    vector<string> flds;
-public:
-    splitstring(char *s) : string(s) { };
-    splitstring(string s) : string(s) { };
-    // split: receives a char delimiter; returns a vector of strings
-    // By default ignores repeated delimiters, unless argument rep == 1.
-    vector<string>& split(char delim, int rep) {
-        if (!flds.empty()) flds.clear();  // empty vector if necessary
-        string work = data();
-        string buf = "";
-        int i = 0;
-        while (i < work.length()) {
-            if (work[i] != delim)
-                buf += work[i];
-            else if (rep == 1) {
-                flds.push_back(buf);
-                buf = "";
-            } else if (buf.length() > 0) {
-                flds.push_back(buf);
-                buf = "";
-            }
-            i++;
-        }
-        if (!buf.empty())
-            flds.push_back(buf);
-        return flds;
-    }
-};
-
 
 
 void error(const char *msg)
@@ -240,7 +211,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
             //send(curr->fd, "Enter some text:\n", 18, 0);
          }         
          //put all this into poll and wait for something magical to happen
-         printf("calling poll (%d sockets)\n\r", num_fds);
+         //printf("calling poll (%d sockets)\n\r", num_fds);
          if (poll(my_fds, num_fds, -1) == -1)
          {
             perror("poll");
@@ -291,32 +262,52 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 			 if ((i == console) && (curr->revents != 0))
 			   { 
                   
-                  // para atender a la consola
+          // para atender a la consola
           string out;              
           int size ;
 				  get_all_buf(curr->fd,out,size);                  
-				  
-          if (out.find("share") != std::string::npos) { //share command
-            splitstring s(out);
-            vector<string> splitV = s.split(' ',1);
-            //cout<< splitV.size()<<"\n";
+				  splitstring s(out);
+          vector<string> splitV = s.split(' ',1);
+          string command = splitV[0];
 
-            string file =splitV.size() > 0 ? splitV[1] : "";//out.substr(6);
+          if (command.find("show") != std::string::npos) { //show command
+            string param =splitV.size() > 0 ? splitV[1] : "";
+            if (param.size() > 0) {
+
+              if (param.find("share") != std::string::npos) { //"show share" muestra todos los archivos compartidos y los bytes transmitidos
+                  print_shared_files(this_is_me);
+              }
+              else if (param.find("downloads") != std::string::npos) { //"show downloads" muestra todas las descargas actuales para este cliente, junto con la dir del uploader y bytes descargados
+                  print_downloads(this_is_me);
+              }
+              else if (param.find("uploads") != std::string::npos) { //"show uploads" muestra todas las cargas en progreso, junto con la dirección del downloader y los bytes entregados
+                  print_uploads(this_is_me);
+              }
+              else perror("Invalid argument for show command");                        
+
+
+            }
+            else perror("Not enough arguments, need to specify what to show");                        
+          }
+
+          if (command.find("share") != std::string::npos) { //share command
+                        
+            string file =splitV.size() > 0 ? splitV[1] : "";
             if (file.size() > 0) {
               
-              cout << "file to share:@"<<file<<"@\n";
+              //cout << "file to share:@"<<file<<"@\n";
 
               share_file(this_is_me,file);                          
             }
             else perror("Not enough arguments, need to specify file to share");                        
           }
 
-				  cout << "pedido de consola" << "\n"; 
-				  cout << "comando: " << out <<"\n";                      
+				  /*cout << "pedido de consola" << "\n"; 
+				  cout << "comando: " << out <<"\n";                      */
 
           if (out.compare("quit")==0) {         
             //delete this_is_me;   
-            cout << "Cerrando cliente: \n";
+            cout << "Cerrando cliente.. \n";
             exit(0);
           }
                                       
@@ -354,14 +345,12 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 int main(int argc, char *argv[])
 {
     int sockfd,port_accept,port_console;
-    //struct sockaddr_in serv_addr;
-    //struct hostent *server;
+
 
     if (argc < 5) {
        fprintf(stderr,"usage %s hostname hostport acceptport consoleport\n", argv[0]);
        exit(0);
     }
-    //portno = atoi(argv[2]);
     
 	printf("Comienza cliente \n");
 	printf("Me conecto al servidor \n");
@@ -369,16 +358,12 @@ int main(int argc, char *argv[])
     this_is_me = client_create(HOST,argv[2]);
 
     sockfd = connect_socket(HOST,argv[2]) ;    
-    printf("Conectado con el servidor \n");
+    printf("Conectado con el servidor \n\n");
     
     port_accept = atoi(argv[3]);
     port_console = atoi(argv[4]);
 
 	processPeerToPeer(port_accept,port_console,sockfd);
 
-/* //primitiva CLOSE
-   close(client_socket);
-   freeaddrinfo(res);
-   */
    
 }

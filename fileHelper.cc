@@ -50,7 +50,7 @@ string getMD5(string file, int &fd,unsigned long &size) {
     else {
 
         file_size = get_size_by_fd(file_descript);
-        printf("file size:\t%lu\n", file_size);
+    //    printf("file size:\t%lu\n", file_size);
 
         file_buffer = (char *)mmap(0, file_size, PROT_READ, MAP_SHARED, file_descript, 0);
         MD5((unsigned char*) file_buffer, file_size, result);
@@ -60,8 +60,8 @@ string getMD5(string file, int &fd,unsigned long &size) {
         
         fd = file_descript;
         size = file_size;
-        printf("MD5 for %s is:",file.c_str());        
-        print_md5_sum((unsigned char*)st.str().c_str());
+      //  printf("MD5 for %s is:",file.c_str());        
+      //  print_md5_sum((unsigned char*)st.str().c_str());
         printf("\n");
 
         return st.str();

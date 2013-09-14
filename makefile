@@ -3,8 +3,8 @@ LFLAGS =-lssl -lm -lssl -lcrypto
 
 #Uso
 #./peerClient <trackerHost> <trackerPort> <clientPort> <consolePort>
-peerClient: fileHelper.o clientItem.o peerClient.o 
-	g++ -Wall peerClient.o clientItem.o fileHelper.o -o client $(LFLAGS)
+peerClient: fileHelper.o clientItem.o peerClient.o util.o
+	g++ -Wall peerClient.o clientItem.o fileHelper.o util.o -o client $(LFLAGS)
 
 peerClient.o: peerClient.cc
 	g++ -c peerClient.cc
@@ -19,6 +19,10 @@ fileHelper.o: fileHelper.cc fileHelper.hh
 	g++ -c fileHelper.cc 
 peerTracker.o: peerTracker.cc
 	g++ -c peerTracker.cc
+
+util.o: util.cc util.hh
+	g++ -c util.cc
+
 
 #/libssl.a
 all:

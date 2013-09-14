@@ -27,4 +27,10 @@ void client_destroy (client *cli);
 
 void share_file(client *cli,string file);
 
+void print_shared_files(client * cli);
+void print_downloads(client * cli);
+void print_uploads(client * cli);
+
+
+
 #endif 
