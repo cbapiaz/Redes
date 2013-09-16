@@ -2,23 +2,23 @@
 LFLAGS =-lssl -lm -lssl -lcrypto
 
 #Uso
-#./peerClient <trackerHost> <trackerPort> <clientPort> <consolePort>
-peerClient: fileHelper.o clientItem.o peerClient.o util.o
-	g++ -Wall peerClient.o clientItem.o fileHelper.o util.o -o client $(LFLAGS)
+#./Client <trackerHost> <trackerPort> <clientPort> <consolePort>
+Client: fileHelper.o clientItem.o Client.o util.o
+	g++ -Wall Client.o clientItem.o fileHelper.o util.o -o client $(LFLAGS)
 
-peerClient.o: peerClient.cc
-	g++ -c peerClient.cc
+Client.o: Client.cc
+	g++ -c Client.cc
 #Uso
-#./peerTracker <puerto>
-peerTracker: fileHelper.o clientItem.o peerTracker.o
-	g++ -Wall peerTracker.o clientItem.o fileHelper.o -o tracker $(LFLAGS)
+#./Tracker <puerto>
+Tracker: fileHelper.o clientItem.o Tracker.o
+	g++ -Wall Tracker.o clientItem.o fileHelper.o -o tracker $(LFLAGS)
 
 clientItem.o: clientItem.cc clientItem.hh
 	g++ -c clientItem.cc
 fileHelper.o: fileHelper.cc fileHelper.hh
 	g++ -c fileHelper.cc 
-peerTracker.o: peerTracker.cc
-	g++ -c peerTracker.cc
+Tracker.o: Tracker.cc
+	g++ -c Tracker.cc
 
 util.o: util.cc util.hh
 	g++ -c util.cc
@@ -26,8 +26,8 @@ util.o: util.cc util.hh
 
 #/libssl.a
 all:
-	make peerClient
-	make peerTracker
+	make Client
+	make Tracker
 
 clean:
 	rm *.o -f
@@ -35,8 +35,8 @@ clean:
 	rm server -f
 	rm client -f
 	rm peer -f
-	rm peerClient -f
-	rm peerTracker -f	
+	rm client -f
+	rm tracker -f	
 	rm tracker -f
 	rm *~ -f
 	rm *.TMP -f
