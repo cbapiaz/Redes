@@ -9,9 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #include <arpa/inet.h> //inet_addr
-#include <stdlib.h>
 #include <unistd.h> //close
 
 #include <sys/time.h>
@@ -149,6 +147,7 @@ void get_all_buf(int sock, std::string & inStr, int &totalSize) {
         }
         total += n;
         temp[total] = '\0';
+
         found = (strchr(temp, '\n') != 0);
     }
 
@@ -341,6 +340,9 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
      }
 }
 
+string getMyIP() {  
+  return "127.0.0.1";
+}
 
 int main(int argc, char *argv[])
 {
@@ -352,12 +354,20 @@ int main(int argc, char *argv[])
        exit(0);
     }
     
-	printf("Comienza cliente \n");
-	printf("Me conecto al servidor \n");
+	  printf("Comienza cliente \n");
+	  printf("Me conecto al servidor \n");
     
     this_is_me = client_create(HOST,argv[2]);
 
+    //connect to tracker
     sockfd = connect_socket(HOST,argv[2]) ;    
+
+    char buff[MAX_BUFF_SIZE];    
+    sprintf(buff, "NEWCLIENT\n%s:%s\r\n", getMyIP().c_str(),argv[3]);
+
+    //cout<<"message to send:"<<buff<<"\n";
+    send(sockfd, buff, strlen(buff), 0);    
+
     printf("Conectado con el servidor \n\n");
     
     port_accept = atoi(argv[3]);

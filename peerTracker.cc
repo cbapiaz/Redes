@@ -19,17 +19,26 @@
 #include <signal.h>
 #include <errno.h>
 
+
+#include "util.hh"
+#include "clientItem.hh"
+
 #include <map>
 
+#include <vector>
+
 #include <string>
-#include <iostream>
+
 #include <sstream>
 
 #include <openssl/md5.h>
 
+#include <iostream>
+
 using namespace std;
 
-#include "clientItem.hh"
+
+#define MAX_MSG_SIZE 1024*1024
 
 #define PORT "3490"
 #define HOST "localhost"
@@ -50,6 +59,42 @@ void error(const char *msg)
 {
     perror(msg);
     exit(1);
+}
+
+
+void get_all_buf(int sock, std::string & inStr,string sep, int &totalSize) {
+    int n = 1, total = 0, found = 0;
+    char c;
+    char temp[1024*1024];
+    int totalFound = 0;
+
+
+    // Keep reading up to a '\n'
+    while (totalFound < sep.size()) {
+        n = recv(sock, &temp[total], sizeof(temp) - total - 1, 0);
+        if (n == -1) {
+            /* Error, check 'errno' for more details */
+            break;
+        }
+        total += n;
+        temp[total] = '\0';
+
+        if (totalFound < sep.size()) {
+            int k=0;
+            bool foundAny;
+            while (k < sep.size() && !foundAny){            
+                foundAny = strchr(temp, sep[totalFound]) != 0;
+                k++;
+            }
+            
+            if (foundAny) { totalFound++; }
+        }
+        
+    }
+
+    totalSize = total-sep.size();
+    inStr = temp;
+    inStr = inStr.substr(0, inStr.size()-sep.size()); //all characters except the separator
 }
 
 void print_clients (map<string, client*> m){
@@ -160,23 +205,60 @@ void pollserver(int port_accept) {
 				new_conn->fd = accept(curr->fd, (struct sockaddr *)&their_addr, &sin_size);
 				new_conn->events = POLLIN;
 				new_conn->revents = 0;
+                cout<<"accept the connection to the new client\n";
+				// leo el mensaje del cliente
+                string msg;              
+                int size ;
+                
+                char data[MAX_MSG_SIZE];
+                int r_data_size = recv(new_conn->fd, data, MAX_MSG_SIZE, 0);
+                data[r_data_size]='\0';
 
-				
+                msg = string(data);
 
-				//Add it to the poll call
-				my_fds[num_fds] = *new_conn;
-				num_fds++;	
-			
-				ip = inet_ntoa(their_addr.sin_addr);
-				
-				std::stringstream out;
-				out << ntohs(their_addr.sin_port);
-				port = out.str();				
-				
-				clients[port + ip] = client_create(ip,port);
-				//ver donde copiar
-				//ver el concat que copia
-				print_clients(clients);
+                //get_all_buf(new_conn->fd,msg,"\r\n",size);                  
+                cout<<msg<<"\n";
+
+                splitstring s(msg);
+                vector<string> splitV = s.split('\n',1);
+                string command = splitV[0];
+
+                /**  definir el protocolo aca segun el comando **/
+
+                if (command.find("NEWCLIENT") != std::string::npos) { //show command
+                    if (splitV.size() < 2) {
+                        perror("NEWCLIENT command error, not enough parameters");
+                    }
+                    else {
+                        vector<string> _sV = splitstring(splitV[1]).split(':',1);
+                        if (_sV.size() < 2) {
+                            perror("NEWCLIENT command error, invalid parameter format must be <IP>:<PORT>");
+                        }
+                        else {
+                            string ip = _sV[0];
+                            string port = _sV[1];
+
+            				//Add it to the poll call
+            				my_fds[num_fds] = *new_conn;
+            				num_fds++;	
+            			
+            				/*ip = inet_ntoa(their_addr.sin_addr);				
+            				std::stringstream out;
+            				out << ntohs(their_addr.sin_port);
+            				port = out.str();				*/
+            				
+            				clients[port + ip] = client_create(ip,port);
+            				//ver donde copiar
+            				//ver el concat que copia
+            				print_clients(clients);
+                        }
+                    }
+                }
+                else {
+                    cout<<"nuevo mensaje: "<< msg;
+                }
+
+                /** ------------------------------------------ **/ 
 				
 			 }
 

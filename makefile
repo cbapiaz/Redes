@@ -10,8 +10,8 @@ peerClient.o: peerClient.cc
 	g++ -c peerClient.cc
 #Uso
 #./peerTracker <puerto>
-peerTracker: fileHelper.o clientItem.o peerTracker.o
-	g++ -Wall peerTracker.o clientItem.o fileHelper.o -o tracker $(LFLAGS)
+peerTracker: fileHelper.o clientItem.o peerTracker.o util.o
+	g++ -Wall peerTracker.o clientItem.o fileHelper.o util.o -o tracker $(LFLAGS)
 
 clientItem.o: clientItem.cc clientItem.hh
 	g++ -c clientItem.cc
