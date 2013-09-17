@@ -220,7 +220,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
         for (i = 0; i < num_fds; i++)
         {
 			 curr = &my_fds[i];	
- 		 
+ 		  
 			 if ((i == 0) && (curr->revents != 0))
 			 {
 				printf("Hay nuevo cliente\n\r");

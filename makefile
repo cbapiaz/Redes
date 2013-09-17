@@ -35,8 +35,7 @@ clean:
 	rm server -f
 	rm client -f
 	rm peer -f
-	rm Client -f
-	rm Tracker -f	
+	rm client -f	
 	rm tracker -f
 	rm *~ -f
 	rm *.TMP -f
