@@ -145,6 +145,7 @@ static void get_all_buf(int sock, std::string & inStr, int &totalSize) {
         }
         total += n;
         temp[total] = '\0';
+
         found = (strchr(temp, '\n') != 0);
     }
 
