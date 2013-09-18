@@ -9,7 +9,7 @@
 using namespace std;
 
 
-typedef struct FileDescriptor FileDescriptor;
+typedef struct fileDescriptor fileDescriptor;
 
 typedef struct client client;
 

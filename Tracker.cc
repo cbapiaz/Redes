@@ -58,13 +58,13 @@ using namespace std;
 #define SECOND 1000
 #define TIMEOUT (30 * SECOND)
 
-void print_clients (map<string, client*> m){
+void print_clients (map<int, client*> m){
 	cout << "Los clientes registrados son \n";
-for(std::map<string, client*>::const_iterator it = m.begin(); it != m.end(); it++)
-{
-	cout << it->first <<  "\n"; ;
-	//Do something
-}
+    for(std::map<int, client*>::const_iterator it = m.begin(); it != m.end(); it++)
+    {
+    	cout << it->first <<  "\n"; ;
+    	//Do something
+    }
 }
 
 void pollserver(int port_accept) {   
@@ -82,7 +82,7 @@ void pollserver(int port_accept) {
    string ip;                             //size of data recieved
    string port; 
    order_fds = false;   
-   map<string, client*> clients;  
+   map<int, client*> clients;  
    bool eliminar = false;
     
     //Creo entrada[0] de my_fds con el socket de la conexión con el cliente
@@ -181,11 +181,10 @@ void pollserver(int port_accept) {
             				my_fds[num_fds] = *new_conn;
             				num_fds++;	            			
             				
-            				clients[port + ip] = client_create(ip,port);            				
+            				clients[new_conn->fd] = client_create(ip,port);            				
             				
             				print_clients(clients);
-            				sprintf(buff, "ok");    				
-            				
+            				sprintf(buff, "ok");
                         }
                     }
 
@@ -200,32 +199,56 @@ void pollserver(int port_accept) {
 			 else if ((i > 0) && (curr->revents != 0))
 			   {
 				  
-				  if ((curr->revents != POLLIN)) 
+				  if (curr->revents != POLLIN) 
 				  {
-					  printf("algun error\n");
+					  printf("REVENTS algun error\n");
 					  eliminar = true;
 				  }
 				  else
 				  {
 					  printf("Recibo pedido cliente\n"); 
-					  //buff_sz = recv(curr->fd, &buff, 254, 0);					  
+					  //buff_sz = recv(curr->fd, &buff, 254, 0);					  					  
 
-					  char data[MAX_MSG_SIZE];
-                	  int buff_sz = recv(curr->fd, data, MAX_MSG_SIZE, 0);
-                	  data[buff_sz]='\0';
+                	  char data[MAX_MSG_SIZE];
+		              int buff_sz = recv(curr->fd, data, MAX_MSG_SIZE, 0);
+		              data[buff_sz]='\0';
+
 
 					  if (buff_sz <= 0)
 					  {
-						  printf("algun error\n");
+						  printf("pedido del cliente no valido error\n");
 						  eliminar = true;
 					  }
 					  else
 					  {  					  
-			  
-						  buff[buff_sz] = '\0';
-						  printf("Envio respuesta cliente\n");
+			  				
+			              string msg = string(data);
+
+                          cout<<"New message from: "<<client_getcIp(clients[curr->fd])<<"@"<<client_getcPort(clients[curr->fd])<<"\n";
+			              cout<<msg<<"\n";
+
+			              splitstring s(msg);
+			              vector<string> splitV = s.split('\n',1);
+			              string command = splitV[0];
+
+			              /**  definir el protocolo aca segun el comando **/
+
+
+			              //publish a new file
+			              if (command.find("PUBLISH") != std::string::npos) { //show command                            
+
+			              }
+
+			              if (command.find("SEARCH") != std::string::npos) { //show command
+
+			              }
+
+			              
+
+						  
+						  /*printf("Envio respuesta cliente\n");
 						  send(curr->fd, buff, strlen(buff) + 1, 0);
-						  printf("\n\r");
+						  printf("\n\r");*/
 					  }
 				  }
 			   }

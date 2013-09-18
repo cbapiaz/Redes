@@ -40,6 +40,7 @@ clean:
 	rm *~ -f
 	rm *.TMP -f
 	rm *.tmp -f
+	rm *.stackdump -f
 
 rebuild:
 	make clean
