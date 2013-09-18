@@ -159,13 +159,19 @@ void pollserver(int port_accept) {
                 /**  definir el protocolo aca segun el comando **/
 
                 if (command.find("NEWCLIENT") != std::string::npos) { //show command
+                	char buff[MAX_BUFF_SIZE];                	
+
                     if (splitV.size() < 2) {
-                        perror("NEWCLIENT command error, not enough parameters");
+                    	const char *errMsg= "NEWCLIENT command error, not enough parameters";
+                        perror(errMsg);                        
+                        sprintf(buff, "fail\n%s\r\n", errMsg);    				
                     }
                     else {
                         vector<string> _sV = splitstring(splitV[1]).split(':',1);
                         if (_sV.size() < 2) {
-                            perror("NEWCLIENT command error, invalid parameter format must be <IP>:<PORT>");
+                        	const char *errMsg= "NEWCLIENT command error, invalid parameter format must be <IP>:<PORT>";
+                            perror(errMsg);
+                     		sprintf(buff, "fail\n%s\r\n", errMsg);    				       
                         }
                         else {
                             string ip = _sV[0];
@@ -175,34 +181,20 @@ void pollserver(int port_accept) {
             				my_fds[num_fds] = *new_conn;
             				num_fds++;	            			
             				
-            				clients[port + ip] = client_create(ip,port);
-            				//ver donde copiar
-            				//ver el concat que copia
+            				clients[port + ip] = client_create(ip,port);            				
+            				
             				print_clients(clients);
+            				sprintf(buff, "ok");    				
+            				
                         }
                     }
+
+                    send(new_conn->fd, buff, strlen(buff), 0);
                 }
                 else {
                     cout<<"nuevo mensaje: "<< msg;
                 }
-
-                /** ------------------------------------------ **/ 
-				//Add it to the poll call
-				/*my_fds[num_fds] = *new_conn;
-				num_fds++;	
-			
-				ip = inet_ntoa(their_addr.sin_addr);
-				
-				std::stringstream out;
-				out << ntohs(their_addr.sin_port);
-				port = out.str();
-				
-				cout << "puerto dspues de out string" << port << "\n";				
-				
-				clients[port + ip] = client_create(ip,port);
-				//ver donde copiar
-				//ver el concat que copia
-				print_clients(clients);*/				
+                
 			 }
 
 			 else if ((i > 0) && (curr->revents != 0))
@@ -216,7 +208,12 @@ void pollserver(int port_accept) {
 				  else
 				  {
 					  printf("Recibo pedido cliente\n"); 
-					  buff_sz = recv(curr->fd, &buff, 254, 0);					  
+					  //buff_sz = recv(curr->fd, &buff, 254, 0);					  
+
+					  char data[MAX_MSG_SIZE];
+                	  int buff_sz = recv(curr->fd, data, MAX_MSG_SIZE, 0);
+                	  data[buff_sz]='\0';
+
 					  if (buff_sz <= 0)
 					  {
 						  printf("algun error\n");
