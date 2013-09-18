@@ -3,6 +3,7 @@
 #include <string>
 
 #include <vector>
+#include <map>
 
 #include "clientItem.hh"
 
@@ -68,6 +69,52 @@ void client_destroy (client *cli){
 	delete cli;
 } 
 
+string search_file(map<int,client*> &clients,string file) {
+	string md5;
+	string clientsWithTheFile="";
+	bool foundAny = false;
+
+	for(std::map<int, client*>::const_iterator it = clients.begin(); it != clients.end(); it++)
+    {
+    	client * cli = it->second;
+    	int k=0;
+    	bool found = false;
+
+    	while (!found && k < cli->shared_files.size()) {
+
+    		found = (cli->shared_files[k].name.compare(file)==0);
+    		k++;
+    	}
+
+    	if (found) {
+    		fileDescriptor _fd =cli->shared_files[k];
+    		md5 = _fd.md5;
+    		
+    		clientsWithTheFile += cli->ip + ":" + cli->port+"\n";
+    	}
+
+    	foundAny = foundAny || found;
+    }
+
+    if (foundAny) {
+    	return "FILE\n"+md5+"\n"+clientsWithTheFile+"\n";
+    }
+    else return "fail\nempty";
+}
+
+
+void publish_file(client *cli,string file,string _md5) {
+	if (cli != NULL) {		 		 
+	     fileDescriptor fdesc;
+	     fdesc.name = file;			
+		 fdesc.md5 = _md5;
+		 fdesc.fd = -1;
+		 fdesc.size = -1;
+		 fdesc.bytes_transfered = 0;
+		 cli->shared_files.push_back(fdesc);		 
+	}
+	else perror ("share_file: client should not be null");
+}
 
 void share_file(client *cli,string file) {
 	if (cli != NULL) {		 

@@ -232,23 +232,45 @@ void pollserver(int port_accept) {
 			              string command = splitV[0];
 
 			              /**  definir el protocolo aca segun el comando **/
-
-
 			              //publish a new file
 			              if (command.find("PUBLISH") != std::string::npos) { //show command                            
+                                char buff[MAX_BUFF_SIZE];                   
 
+                                if (splitV.size() < 3) {
+                                    const char *errMsg= "PUBLISH command error, not enough parameters";
+                                    perror(errMsg);                        
+                                    sprintf(buff, "fail\n%s\r\n", errMsg);                  
+                                }
+                                else {
+                                    string fileName = splitV[1];
+                                    string md5 = splitV[2];
+                                    publish_file(clients[curr->fd],fileName,md5);
+
+                                    sprintf(buff, "ok");
+                                }
+
+                                send(curr->fd, buff, strlen(buff), 0);
 			              }
 
 			              if (command.find("SEARCH") != std::string::npos) { //show command
+                                char buff[MAX_BUFF_SIZE];                   
 
-			              }
+                                if (splitV.size() < 2) {
+                                    const char *errMsg= "SEARCH command error, not enough parameters";
+                                    perror(errMsg);                        
+                                    sprintf(buff, "fail\n%s\r\n", errMsg);                  
+                                }
+                                else {
 
-			              
+                                    string fileName = splitV[1];                                    
+                                    string result = search_file(clients,fileName);
 
+                                    sprintf(buff, "%s",result.c_str());
+                                }
+
+                                send(curr->fd, buff, strlen(buff), 0);
+			              }			              						 
 						  
-						  /*printf("Envio respuesta cliente\n");
-						  send(curr->fd, buff, strlen(buff) + 1, 0);
-						  printf("\n\r");*/
 					  }
 				  }
 			   }

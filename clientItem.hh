@@ -4,6 +4,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include <string>
+#include <map>
 
 #include "fileHelper.hh"
 using namespace std;
@@ -24,6 +25,9 @@ string client_getcPort (client *cli);
 
 /** destroy client */
 void client_destroy (client *cli); 
+
+void publish_file(client *cli,string file,string _md5);
+string search_file(map<int,client*> &clients,string file);
 
 void share_file(client *cli,string file);
 
