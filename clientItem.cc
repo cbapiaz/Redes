@@ -149,46 +149,73 @@ void print_uploads(client * cli){
 
 }
 
-
 /***************TRACKER METHODS******************************/
-
 void addNewTrackerClient(map<int,trackerClient*> &trackerClients,int fd, string ip, string port){
 	trackerClients[fd] = new trackerClient();
 	trackerClients[fd]->ip = ip;
 	trackerClients[fd]->port = port;
 }
 
+string get_md5_string(unsigned char* md) {
+    int i;
+    string result="";
+    for(i=0; i <MD5_DIGEST_LENGTH; i++) {
+    		char buff[255];
+            sprintf(buff,"%02x",md[i]);
+            string s(buff);
+            result=result+s;
+    }
+    return result;
+}
+
 string search_file(map<int,trackerClient*> &clients,string file) {
-	/*string md5;
+	string md5="";
 	string clientsWithTheFile="";
-	bool foundAny = false;
 
-	for(std::map<int, trackerClient*>::const_iterator it = clients.begin(); it != clients.end(); it++)
+	map<int, trackerClient*>::const_iterator it= clients.begin();
+	bool foundFirst = false;	
+	while (!foundFirst && it != clients.end())
     {
-    	client * cli = it->second;
-    	int k=0;
-    	bool found = false;
-
-    	while (!found && k < cli->shared_files.size()) {
-
-    		found = (cli->shared_files[k].name.compare(file)==0);
-    		k++;
-    	}
-
-    	if (found) {
-    		fileDescriptor _fd =cli->shared_files[k];
-    		md5 = _fd.md5;
+    	map<string, fileDescriptor>::const_iterator itFiles=it->second->client_files.begin();    	
+    	while(!foundFirst && itFiles != it->second->client_files.end())
+    	{
+    		foundFirst = itFiles->first.compare(file) == 0;
     		
-    		clientsWithTheFile += cli->ip + ":" + cli->port+"\n";
+    		if (!foundFirst)
+    			itFiles++;
+    	}
+    	
+    	if (!foundFirst)
+    		it++;
+    	else md5 = itFiles->second.md5;
+    }     	 
+
+ 	if (!foundFirst) {
+ 		return "fail\nFile not found";
+ 	}
+ 	else {
+ 		bool foundAny = false;
+ 		for(std::map<int, trackerClient*>::const_iterator it = clients.begin(); it != clients.end(); it++)
+    	{
+    		bool found = false;
+    		for(std::map<string, fileDescriptor>::const_iterator itFiles = it->second->client_files.begin(); itFiles != it->second->client_files.end(); itFiles++)
+    		{
+    			found = (itFiles->second.md5 == md5);
+    			if (found) break;
+    		}
+
+    		if (found) {
+    			clientsWithTheFile += it->second->ip + ":" + it->second->port+"\n";
+    		}
+
+    		foundAny = foundAny || found;
     	}
 
-    	foundAny = foundAny || found;
-    }
-
-    if (foundAny) {
-    	return "FILE\n"+md5+"\n"+clientsWithTheFile+"\n";
-    }
-    else return "fail\nempty";*/
+    	if (foundAny) {
+    	  return "FILE\n"+get_md5_string((unsigned char*)md5.c_str())+"\n"+clientsWithTheFile+"\n";
+    	}
+    	else return "fail\ncritical error MD5 not found";
+ 	}
 
     return "";
 }

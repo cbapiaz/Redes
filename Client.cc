@@ -283,6 +283,15 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 		                  }
 		        				  
 
+		                  if (command.find("download") != std::string::npos) { //download command
+	                   	 	string param =splitV.size() > 1 ? splitV[1] : "";		                   
+		                    if (param.size() > 0) {		                                           
+		                    	string file = param;
+		                    	toSend = "SEARCH\n"+file;
+		                    }
+		                    else perror("Not enough arguments, need to specify what to show");    
+		                  }
+
 		                  if (auxConsole.compare("quit")==0) {         
 		                    //delete this_is_me;   
 		                    cout << "Cerrando cliente.. \n";
@@ -324,15 +333,15 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 	                    eliminar = true;
 	                    order_fds = true;
 	                  }
+
 	                  else
 	                  {                    
 	                  
-	                  cout << "Tamano buffer " << buff_sz << "\n"; 
-	                  buff[buff_sz] = '\0';
-	                            
-	                  cout << "Recibí un pedido de otro cliente" << "\n";
-	                  
-	                  cout << "Si mi puerto de escucha es :" << buff3 << "está bien\n";   
+		                cout << "Tamano buffer " << buff_sz << "\n"; 
+		                buff[buff_sz] = '\0';
+
+		                cout << "Recibí un pedido de otro cliente" << "\n";		                 
+		                cout << "Si mi puerto de escucha es :" << buff3 << "está bien\n";   
 	                  }
 	                }
 	                else
