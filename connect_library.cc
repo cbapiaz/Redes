@@ -99,16 +99,24 @@ static int listen_socket(int port)
 		close (s);
 		return -1;
 	}
-	int on = 1;
-	res = ioctl(s, FIONBIO, (char *)&on);
-    if (res < 0)
-	{
-		perror("ioctl");
-		close (s);
-		return -1;
-	}	
+	//setNonBlocking(s);
+    
 	printf("Aceptando conexiones en el puerto %d\n", port);
     return s;
+}
+
+static int setNonBlocking(int fd) {
+    int on = 1;
+    int res = ioctl(fd, FIONBIO, (char *)&on);
+
+    if (res < 0)
+    {
+        perror("ioctl");
+        close (fd);
+        return -1;
+    }   
+
+    return res;
 }
 
 static int order(struct pollfd fds[MAX_CONN], int nfds)

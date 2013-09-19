@@ -25,7 +25,7 @@
 
 #include "connect_library.cc"
 
-#include "Util.hh"
+#include "util.hh"
 
 #include <iostream>
 using namespace std;
@@ -108,8 +108,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
    int buff_sz;                             //size of data recieved
    int socket_client;
    console = -1;
-   order_fds = false;       
-   
+   order_fds = false;          
 
 
     //Creo entrada[0] de my_fds con el socket de la conexión con el cliente
@@ -156,22 +155,12 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 	          cout << "ordeno" << "\n";
 	          if (console != -1)
 	            console = new_console_pos(my_fds,num_fds,console_fds);
-         }
-         //reset all event flag
-         //for (i = 2; i < num_fds; i++)
-         //{
-         //   curr = &my_fds[i];
-         //   curr->events = POLLIN;
-         //   curr->revents = 0;
-         //}         
-         //put all this into poll and wait for something magical to happen
-         //printf("calling poll (%d sockets)\n\r", num_fds);
+         }         
          if (poll(my_fds, num_fds, -1) == -1)
          {
             perror("poll");
             exit(0);
          }
-          //printf("poll returned!\n");
         for (i = 0; i < num_fds; i++)
         {
     			 curr = &my_fds[i];	
@@ -232,13 +221,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
     				
 
     			 if ((i == console) && (curr->revents != 0))
-    			 { 
-                      
-	              
-	              // para atender a la consola
-	              /*string out;              
-	              int size;
-	    		  get_all_buf2(curr->fd,out,size);*/
+    			 {                       	             
 
 	    		  char data[MAX_BUFF_SIZE];
 		          int size = recv(curr->fd, data, MAX_BUFF_SIZE, 0);
@@ -256,91 +239,61 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 	              		  
 						  auxConsole = auxConsole.size() > 2 ? auxConsole.substr(0, auxConsole.size()-2) : auxConsole;
 
-        				  splitstring s(auxConsole);
-        				  
-        				  /*auxConsole = auxConsole.replace( auxConsole.begin(), auxConsole.end(), '\n', ''); 
-        				  auxConsole = auxConsole.replace( auxConsole.begin(), auxConsole.end(), '\r', ''); */
-
-        				  cout <<auxConsole.size()<<"-console msg:$"<< auxConsole<<"$\n";
-
+        				  splitstring s(auxConsole);        				          				          				 
 
 		                  vector<string> splitV = s.split(' ',1);
-		                  //if (splitV.size() > 0) {
 
-			                  string command = splitV[0];
- 								
+			              string command = splitV[0];
 
         				  
-			                  if (command.find("show") != std::string::npos) { //show command
-			                    string param =splitV.size() > 1 ? splitV[1] : "";
-			                    cout <<"param:#"<<param<<"#\n";
-			                    if (param.size() > 0) {
+		                  if (command.find("show") != std::string::npos) { //show command
+		                    string param =splitV.size() > 1 ? splitV[1] : "";
+		                    cout <<"param:#"<<param<<"#\n";
+		                    if (param.size() > 0) {
 
-			                      if (param.find("share") != std::string::npos) { //"show share" muestra todos los archivos compartidos y los bytes transmitidos
-			                          print_shared_files(this_is_me);
-			                      }
-			                      else if (param.find("downloads") != std::string::npos) { //"show downloads" muestra todas las descargas actuales para este cliente, junto con la dir del uploader y bytes descargados
-			                          print_downloads(this_is_me);
-			                      }
-			                      else if (param.find("uploads") != std::string::npos) { //"show uploads" muestra todas las cargas en progreso, junto con la dirección del downloader y los bytes entregados
-			                          print_uploads(this_is_me);
-			                      }
-			                      else perror("Invalid argument for show command");                        
+		                      if (param.find("share") != std::string::npos) { //"show share" muestra todos los archivos compartidos y los bytes transmitidos
+		                          print_shared_files(this_is_me);
+		                      }
+		                      else if (param.find("downloads") != std::string::npos) { //"show downloads" muestra todas las descargas actuales para este cliente, junto con la dir del uploader y bytes descargados
+		                          print_downloads(this_is_me);
+		                      }
+		                      else if (param.find("uploads") != std::string::npos) { //"show uploads" muestra todas las cargas en progreso, junto con la dirección del downloader y los bytes entregados
+		                          print_uploads(this_is_me);
+		                      }
+		                      else perror("Invalid argument for show command");                        
 
 
-			                    }
-			                    else perror("Not enough arguments, need to specify what to show");                        
-			                  }
+		                    }
+		                    else perror("Not enough arguments, need to specify what to show");                        
+		                  }
 
-			                  if (command.find("share") != std::string::npos) { //share command			                    
-			                    //cout <<"console command:"<<splitV.size()<<"-"<<command<<"\n";
-			                    string file =splitV.size() > 1 ? splitV[1] : "";
+		                  if (command.find("share") != std::string::npos) { //share command			                    
+		                    //cout <<"console command:"<<splitV.size()<<"-"<<command<<"\n";
+		                    string file =splitV.size() > 1 ? splitV[1] : "";
 
-			                    if (file.size() > 0) {
-			                      
-			                      cout << "file to share:@"<<file<<"@\n";
-			                      share_file(this_is_me,file);                          
-			                    }
-			                    else perror("Not enough arguments, need to specify file to share");                        
-			                  }
+		                    if (file.size() > 0) {
+		                      
+		                      cout << "file to share:@"<<file<<"@\n";
+		                      share_file(this_is_me,file);                          
+		                    }
+		                    else perror("Not enough arguments, need to specify file to share");                        
+		                  }
+		        				  
 
-			        				  /*cout << "pedido de consola" << "\n"; 
-			        				  cout << "comando: " << out <<"\n";                      */
+		                  if (auxConsole.compare("quit")==0) {         
+		                    //delete this_is_me;   
+		                    cout << "Cerrando cliente.. \n";
+		                    exit(0);
+		                  }
+                                              
+        				  // en out queda gurdado lo que recibo por telnet
+        				  				  
+        				  //envio al servidor lo que me llego por telnet				
 
-			                  if (auxConsole.compare("quit")==0) {         
-			                    //delete this_is_me;   
-			                    cout << "Cerrando cliente.. \n";
-			                    exit(0);
-			                  }
-	                                              
-	        				  // en out queda gurdado lo que recibo por telnet
-	        				  				  
-	        				  //envio al servidor lo que me llego por telnet				
-
-	        				  char *toSend = (char*)auxConsole.c_str();
-	        				  send(serv_socket, toSend, strlen(toSend), 0);
-	              
-			                  //recibo la rspuesta del sevidor,por ahora es un numero de puerto
-			                  /*buff_sz = recv(serv_socket, &buff2, 254, 0);          
-			                  
-			                  //me conecto con el cliente
-			                  socket_client = connect_socket (HOST,buff2);
-			                  
-			                  //agrego  el nuevo cliente a my_fds
-			                  
-			                  sin_size = sizeof their_addr;
-			                  new_conn = (struct pollfd*) malloc(sizeof(struct pollfd));
-			                  new_conn->fd = socket_client;
-			                  new_conn->events = POLLOUT;
-			                  new_conn->revents = 0;
-			                  
-			                  my_fds[num_fds] = *new_conn;
-			                  num_fds++;*/
-
-			                  auxConsole = "";
-		              	/*} else  {
-		              		printf("Invalid Console Command\n");
-		              	}*/
+        				  char *toSend = (char*)auxConsole.c_str();
+        				  send(serv_socket, toSend, strlen(toSend), 0);
+              			           
+		                  auxConsole = "";		              
 	              }
 
 			   }
@@ -399,46 +352,52 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
      }
 }
 
-string getMyIP() {  
-  return "127.0.0.1";
-}
+#define TRACKER_IP "127.0.0.1"
+#define TRACKER_PORT "6666"
 
 int main(int argc, char *argv[])
 {
     int sockfd,port_accept,port_console;
 
 
-    if (argc < 5) {
-       fprintf(stderr,"usage %s hostname hostport acceptport consoleport\n", argv[0]);
+    if (argc < 4) {
+       fprintf(stderr,"usage %s hostname acceptport consoleport\n", argv[0]);
        exit(0);
     }
     
 	  printf("Comienza cliente \n");
 	  printf("Me conecto al servidor \n");
     
-    this_is_me = client_create(HOST,argv[2]);
+	char * myip = argv[1];
+	char * acceptport = argv[2];
+	char * consoleport = argv[3];
+	char * trackerIp = (char*)TRACKER_IP;
+	char * trackerPort = (char*)TRACKER_PORT;
+
+
+	if (argc > 4) {
+		trackerPort = argv[4];		
+	}
+
+	if (argc > 5) {
+		trackerIp = argv[5];
+	}
+
+
+    this_is_me = client_create(myip, acceptport);
 
     //connect to tracker
-    sockfd = connect_socket(HOST,argv[2]) ;    
+    sockfd = connect_socket(trackerIp,trackerPort) ;    
 
     char buff[MAX_BUFF_SIZE];    
-    sprintf(buff, "NEWCLIENT\n%s:%s\r\n", getMyIP().c_str(),argv[3]);
+    sprintf(buff, "NEWCLIENT\n%s:%s\r\n", myip, acceptport);
 
     cout<<"message to send:"<<buff<<"\n";
     send(sockfd, buff, strlen(buff), 0);    
-
-    printf("Conectado con el servidor %s:%s \n\n",argv[3],argv[4]);
     
-    /*port_accept = atoi(argv[3]);
-    port_console = atoi(argv[4]);*/
-    
-    port_accept = (int)strtol(argv[3],NULL,10);
-    port_console = (int)strtol(argv[4],NULL,10);
-
-	printf("hola hola si");
-
-    cout<<"Conectado con el servidor2: "<<port_accept<<":"<<port_console<<"\n";
-
+    port_accept = (int)strtol(acceptport,NULL,10);
+    port_console = (int)strtol(consoleport,NULL,10);
+	
 
 	processPeerToPeer(port_accept,port_console,sockfd);
 

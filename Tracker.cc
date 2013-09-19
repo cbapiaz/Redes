@@ -39,11 +39,8 @@
 using namespace std;
 
 
-
 #include "connect_library.cc"
-#include "clientItem.hh"
 
-#define PORT "3490"
 #define HOST "localhost"
 
 #define PORT_ACCEPT 5555
@@ -58,9 +55,9 @@ using namespace std;
 #define SECOND 1000
 #define TIMEOUT (30 * SECOND)
 
-void print_clients (map<int, client*> m){
+void print_clients (map<int, trackerClient*> m){
 	cout << "Los clientes registrados son \n";
-    for(std::map<int, client*>::const_iterator it = m.begin(); it != m.end(); it++)
+    for(std::map<int, trackerClient*>::const_iterator it = m.begin(); it != m.end(); it++)
     {
     	cout << it->first <<  "\n"; ;
     	//Do something
@@ -82,7 +79,8 @@ void pollserver(int port_accept) {
    string ip;                             //size of data recieved
    string port; 
    order_fds = false;   
-   map<int, client*> clients;  
+   
+   map<int, trackerClient*> clients;  
    bool eliminar = false;
     
     //Creo entrada[0] de my_fds con el socket de la conexión con el cliente
@@ -181,8 +179,8 @@ void pollserver(int port_accept) {
             				my_fds[num_fds] = *new_conn;
             				num_fds++;	            			
             				
-            				clients[new_conn->fd] = client_create(ip,port);            				
-            				
+            				addNewTrackerClient(clients,new_conn->fd,ip,port);
+                            //clients[new_conn->fd] = client_create(ip,port);
             				print_clients(clients);
             				sprintf(buff, "ok");
                         }
@@ -224,8 +222,8 @@ void pollserver(int port_accept) {
 			  				
 			              string msg = string(data);
 
-                          cout<<"New message from: "<<client_getcIp(clients[curr->fd])<<"@"<<client_getcPort(clients[curr->fd])<<"\n";
-			              cout<<msg<<"\n";
+                          /*cout<<"New message from: "<<client_getcIp(clients[curr->fd])<<"@"<<client_getcPort(clients[curr->fd])<<"\n";
+			              cout<<msg<<"\n";*/
 
 			              splitstring s(msg);
 			              vector<string> splitV = s.split('\n',1);

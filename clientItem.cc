@@ -20,17 +20,17 @@ typedef struct fileDescriptor
 {
   	string name;
   	string md5;
-  	int fd;
+  	int fd;///////
   	unsigned long size;
   	unsigned long bytes_transfered;
 } fileDescriptor;
 
 
-// A peer is another client connected to me
+// A peer is another client connected to me by and upload or a download
 typedef struct peer {
 	string ip;
 	string port;
-	vector<fileDescriptor> peer_files; // files being "shared" , currently being downloaded or uploaded
+	fileDescriptor peer_file; //file being downloaded or uploaded
 } peer;
 
 //define the client structure
@@ -38,10 +38,18 @@ typedef struct client
 {
         	string ip;
 			string port;
-			vector<peer> uploaders; // store information about the "clients" that i am uploading files to
-			vector<peer> downloaders; // store information about the "clients" that i am downloading files from
-			vector<fileDescriptor> shared_files; // file that i share with other clients or peers
+			map<int,peer> uploads; //map by socket, store information about the files i am uploading
+			map<int,peer> downloads; //map by socket, store information about the files i am downloading
+			map<string,fileDescriptor> shared_files; //map by filename, file that i share with other clients or peers
 } client;
+
+//define the trackerClient structure
+typedef struct trackerClient
+{
+        	string ip;
+			string port;
+			map<string,fileDescriptor> client_files; //map by filename
+} trackerClient;
 
 
 #define BASE_DIR "share/"
@@ -69,12 +77,89 @@ void client_destroy (client *cli){
 	delete cli;
 } 
 
-string search_file(map<int,client*> &clients,string file) {
-	string md5;
+void share_file(client *cli,string file) {
+	if (cli != NULL) {		 
+		 int fd; unsigned long size;
+		 string _md5 = getMD5(BASE_DIR + file,fd,size);
+
+   	     if (_md5.size() > 0) {
+   	     	 fileDescriptor fdesc;
+   	     	 fdesc.name = file;			
+			 fdesc.md5 = _md5;
+			 fdesc.fd = fd;
+			 fdesc.size = size;
+			 fdesc.bytes_transfered = 0;
+
+			 cli->shared_files[file] = fdesc;
+
+		 }
+		 else {
+		 	perror("\nCannot share file, error calculating md5\n");
+		 }
+	}
+	else perror ("share_file: client should not be null");
+}
+
+void print_file(fileDescriptor& f) {	
+   	  cout<<"File: '"<<f.name << "' - MD5: "; print_md5_sum((unsigned char*)f.md5.c_str());cout<<" - Bytes: " <<f.bytes_transfered << "\n";
+}
+
+
+void print_files(map<string,fileDescriptor>& m) {	
+   for(std::map<string,fileDescriptor>::const_iterator it = m.begin(); it != m.end(); it++)
+   {  fileDescriptor _fd = (fileDescriptor)(it->second);
+   	  print_file(_fd);
+   }
+}
+
+
+void print_shared_files(client * cli){
+	cout<<"\nShared files\n";
+	print_files(cli->shared_files);	  
+}
+
+//Muestra las descargas en progreso junto con la dirección del uploader y los bytes descargados.
+void print_downloads(client * cli){
+   cout<<"\nDownloading files\n";   
+   for(std::map<int, peer>::const_iterator it = cli->downloads.begin(); it != cli->downloads.end(); it++)
+   {
+   	 peer p = it->second;
+   	 cout<<"Downlading From: "<< p.ip << "@" << p.port <<"\n";  	  
+   	 cout<<"--------------------------------------------------------------------------------------\n";
+   	 print_file(p.peer_file);
+   	 cout<<"--------------------------------------------------------------------------------------\n";
+   }
+}
+
+//Muestra las cargas en progreso junto con la dirección del downloader y los bytes entregados.
+void print_uploads(client * cli){
+   cout<<"\nUploadding files\n";   
+   for(std::map<int, peer>::const_iterator it = cli->uploads.begin(); it != cli->uploads.end(); it++)
+   {
+   	  peer p = it->second;
+   	  cout<<"Uploading to: "<< p.ip << "@" << p.port <<"\n";
+   	  cout<<"--------------------------------------------------------------------------------------\n";
+ 	  print_file(p.peer_file);
+ 	  cout<<"--------------------------------------------------------------------------------------\n"; 	     	  
+   }
+
+}
+
+
+/***************TRACKER METHODS******************************/
+
+void addNewTrackerClient(map<int,trackerClient*> &trackerClients,int fd, string ip, string port){
+	trackerClients[fd] = new trackerClient();
+	trackerClients[fd]->ip = ip;
+	trackerClients[fd]->port = port;
+}
+
+string search_file(map<int,trackerClient*> &clients,string file) {
+	/*string md5;
 	string clientsWithTheFile="";
 	bool foundAny = false;
 
-	for(std::map<int, client*>::const_iterator it = clients.begin(); it != clients.end(); it++)
+	for(std::map<int, trackerClient*>::const_iterator it = clients.begin(); it != clients.end(); it++)
     {
     	client * cli = it->second;
     	int k=0;
@@ -99,11 +184,13 @@ string search_file(map<int,client*> &clients,string file) {
     if (foundAny) {
     	return "FILE\n"+md5+"\n"+clientsWithTheFile+"\n";
     }
-    else return "fail\nempty";
+    else return "fail\nempty";*/
+
+    return "";
 }
 
 
-void publish_file(client *cli,string file,string _md5) {
+void publish_file(trackerClient *cli,string file,string _md5) {
 	if (cli != NULL) {		 		 
 	     fileDescriptor fdesc;
 	     fdesc.name = file;			
@@ -111,63 +198,45 @@ void publish_file(client *cli,string file,string _md5) {
 		 fdesc.fd = -1;
 		 fdesc.size = -1;
 		 fdesc.bytes_transfered = 0;
-		 cli->shared_files.push_back(fdesc);		 
+		 cli->client_files[file]=fdesc;//.push_back(
 	}
 	else perror ("share_file: client should not be null");
 }
 
-void share_file(client *cli,string file) {
-	if (cli != NULL) {		 
-		 int fd; unsigned long size;
-		 string _md5 = getMD5(BASE_DIR + file,fd,size);
 
-   	     if (_md5.size() > 0) {
-   	     	 fileDescriptor fdesc;
-   	     	 fdesc.name = file;			
-			 fdesc.md5 = _md5;
-			 fdesc.fd = fd;
-			 fdesc.size = size;
-			 fdesc.bytes_transfered = 0;
 
-			 cli->shared_files.push_back(fdesc);
 
-		 }
-		 else {
-		 	perror("\nCannot share file, error calculating md5\n");
-		 }
-	}
-	else perror ("share_file: client should not be null");
+/******CLIENT TO CLIENT METHODS*******/
+
+/*add new upload, if the peer upload does not exists we create a new one*/
+void addUpload(client *cli, string ip, string port,int fd, string filename) {
+
+}
+/*add new download, if the peer download does not exists we create a new one*/
+void addDownload(client *cli, string ip, string port,int fd, string filename) {
+
 }
 
-void print_files(vector<fileDescriptor>& v) {
-	for (int i=0;i<v.size();i++) { //
-   	  cout<< "File: '"<<v[i].name << "' - MD5: "; print_md5_sum((unsigned char*)v[i].md5.c_str());cout<<" - Bytes: " << v[i].bytes_transfered << "\n";
-   }
-}
-void print_shared_files(client * cli){
-	cout<<"\nShared files\n";
-	print_files(cli->shared_files);	  
+/*update the bytes of an existing upload by the fd socket*/
+/* this also updates the shared file "filename" bytes*/
+void updateUpload(client *cli, int fd_socket,int bytes, string filename) {
+
 }
 
-//Muestra las descargas en progreso junto con la dirección del uploader y los bytes descargados.
-void print_downloads(client * cli){
-   cout<<"\nDownlading files\n";
-   for (int i=0;i<cli->downloaders.size();i++) {
-   	  cout<<"Downlading from: "<< cli->downloaders[i].ip << "@" << cli->downloaders[i].port <<"\n";
-   	  cout<<"--------------------------------------------------------------------------------------\n";
- 	  print_files(cli->downloaders[i].peer_files);
- 	  cout<<"--------------------------------------------------------------------------------------\n"; 	     	  
-   }
+/*update the bytes of an existing download by the fd socket*/
+void updateDownload(client *cli, int fd_socket,int bytes, string filename) {
+
 }
 
-//Muestra las cargas en progreso junto con la dirección del downloader y los bytes entregados.
-void print_uploads(client * cli){
-   cout<<"\nUploading files\n";
-   for (int i=0;i<cli->uploaders.size();i++) {
-   	  cout<<"Uploading To: "<< cli->uploaders[i].ip << "@" << cli->uploaders[i].port <<"\n";  	  
-   	  cout<<"--------------------------------------------------------------------------------------\n";
-   	  print_files(cli->uploaders[i].peer_files);
-   	  cout<<"--------------------------------------------------------------------------------------\n";
-   }
+void deleteUpload(client *cli, int fd_socket) {
+
 }
+
+void deleteDownload(client *cli, int fd_socket) {
+
+}
+
+/****************************************/
+
+
 
