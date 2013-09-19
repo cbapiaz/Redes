@@ -35,6 +35,7 @@ void print_shared_files(client * cli);
 void print_downloads(client * cli);
 void print_uploads(client * cli);
 
+string getFileMD5(client * cli, string file);
 
 /******HANDLE CLIENT TO CLIENT*******/
 
@@ -61,7 +62,7 @@ void deleteDownload(client *cli, int fd_socket);
 void addNewTrackerClient(map<int,trackerClient*> &trackerClients,int fd,string ip, string port);
 
 ///tracker, checkear que no exista otro archivo con el mismo nombre
-void publish_file(trackerClient *cli,string file,string _md5);
+string publish_file(trackerClient *cli,string file,string _md5);
 
 //recorro tracker clients, busco filename hasta encontrar uno, 
 //con el md5 recorro y me quedo con los clientes asociados que tienen ese md5

@@ -242,9 +242,12 @@ void pollserver(int port_accept) {
                                 else {
                                     string fileName = splitV[1];
                                     string md5 = splitV[2];
-                                    publish_file(clients[curr->fd],fileName,md5);
-
-                                    sprintf(buff, "ok");
+                                    
+                                    string res = publish_file(clients[curr->fd],fileName,md5);
+                                    if (res=="") {
+                                        sprintf(buff, "ok");
+                                    }
+                                    else sprintf(buff, "fail\n%s\r\n",res.c_str());
                                 }
 
                                 send(curr->fd, buff, strlen(buff), 0);

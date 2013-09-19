@@ -77,6 +77,10 @@ void client_destroy (client *cli){
 	delete cli;
 } 
 
+string getFileMD5(client * cli, string file){	
+	return cli->shared_files[file].md5;
+}
+
 void share_file(client *cli,string file) {
 	if (cli != NULL) {		 
 		 int fd; unsigned long size;
@@ -190,17 +194,23 @@ string search_file(map<int,trackerClient*> &clients,string file) {
 }
 
 
-void publish_file(trackerClient *cli,string file,string _md5) {
+string publish_file(trackerClient *cli,string file,string _md5) {
 	if (cli != NULL) {		 		 
-	     fileDescriptor fdesc;
-	     fdesc.name = file;			
-		 fdesc.md5 = _md5;
-		 fdesc.fd = -1;
-		 fdesc.size = -1;
-		 fdesc.bytes_transfered = 0;
-		 cli->client_files[file]=fdesc;//.push_back(
+		
+		if (cli->client_files.find(file) == cli->client_files.end()) {
+		     fileDescriptor fdesc;
+		     fdesc.name = file;			
+			 fdesc.md5 = _md5;
+			 fdesc.fd = -1;
+			 fdesc.size = -1;
+			 fdesc.bytes_transfered = 0;
+			 cli->client_files[file]=fdesc;//.push_back(
+		}
+		else return "Cannot publish the same file twice";
 	}
-	else perror ("share_file: client should not be null");
+	else return "Client should not be null";
+
+	return "";
 }
 
 

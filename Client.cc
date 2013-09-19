@@ -245,10 +245,11 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 
 			              string command = splitV[0];
 
+			              string toSend="";
         				  
 		                  if (command.find("show") != std::string::npos) { //show command
 		                    string param =splitV.size() > 1 ? splitV[1] : "";
-		                    cout <<"param:#"<<param<<"#\n";
+		                    //cout <<"param:#"<<param<<"#\n";
 		                    if (param.size() > 0) {
 
 		                      if (param.find("share") != std::string::npos) { //"show share" muestra todos los archivos compartidos y los bytes transmitidos
@@ -274,7 +275,9 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 		                    if (file.size() > 0) {
 		                      
 		                      cout << "file to share:@"<<file<<"@\n";
-		                      share_file(this_is_me,file);                          
+		                      share_file(this_is_me,file);      
+		                      
+		                      toSend = "PUBLISH\n"+file+"\n"+getFileMD5(this_is_me,file)+"\r\n";
 		                    }
 		                    else perror("Not enough arguments, need to specify file to share");                        
 		                  }
@@ -290,8 +293,10 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
         				  				  
         				  //envio al servidor lo que me llego por telnet				
 
-        				  char *toSend = (char*)auxConsole.c_str();
-        				  send(serv_socket, toSend, strlen(toSend), 0);
+        				  //char *toSend = (char*)auxConsole.c_str();
+        				  if (toSend.size() > 0)
+        				  	send(serv_socket, toSend.c_str(), toSend.size(), 0);
+
               			           
 		                  auxConsole = "";		              
 	              }
