@@ -130,6 +130,7 @@ static int order(struct pollfd fds[MAX_CONN], int nfds)
 	  for(j = i; j < nfds; j++)
 	  {
 		fds[j].fd = fds[j+1].fd;
+		fds[j].events = fds[j+1].events;
 	  }
 	  nfds--;
 	}

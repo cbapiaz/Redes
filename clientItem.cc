@@ -16,6 +16,20 @@ using namespace std;
 
 #define MAX_PEERS 500
 
+// A conexion has all the information about the state of a peer to peer conexion 
+typedef struct conexion
+{
+   bool primero;
+   char buf[1025]; 
+   const char* filename; 
+   FILE *file;   
+   int off; 
+   int sent;
+   int rval;
+   bool leer;
+   int total;
+} conexion;
+
 typedef struct fileDescriptor
 {
   	string name;
