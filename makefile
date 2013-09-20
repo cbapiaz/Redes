@@ -4,14 +4,14 @@ LFLAGS =-lssl -lm -lssl -lcrypto
 #Uso
 #./Client <trackerHost> <trackerPort> <clientPort> <consolePort>
 client: fileHelper.o clientItem.o client.o util.o
-	g++ -Wall Client.o clientItem.o fileHelper.o util.o -o client $(LFLAGS)
+	g++ -Wall client.o clientItem.o fileHelper.o util.o -o client $(LFLAGS)
 
-client.o: client.cc
-	g++ -c client.cc
+client.o: Client.cc
+	g++ -c Client.cc
 #Uso
 #./Tracker <puerto>
 tracker: fileHelper.o clientItem.o tracker.o util.o
-	g++ -Wall Tracker.o clientItem.o fileHelper.o util.o -o tracker $(LFLAGS)
+	g++ -Wall tracker.o clientItem.o fileHelper.o util.o -o tracker $(LFLAGS)
 
 clientItem.o: clientItem.cc clientItem.hh
 	g++ -c clientItem.cc
