@@ -12,6 +12,7 @@ using namespace std;
 /*client structures*/
 typedef struct fileDescriptor fileDescriptor;
 typedef struct client client;
+typedef struct peer peer;
 
 /*tracker*/
 typedef struct trackerClient trackerClient;
@@ -41,16 +42,21 @@ string getFileMD5(client * cli, string file);
 /******HANDLE CLIENT TO CLIENT*******/
 
 /*add new upload, if the peer upload does not exists we create a new one*/
-void addUpload(client *cli, string ip, string port,int fd, string filename);
+void addUpload(client *cli, string ip, string port,int fd_socket, string filename);
 /*add new download, if the peer download does not exists we create a new one*/
-void addDownload(client *cli, string ip, string port,int fd, string filename);
+void addDownload(client *cli, string ip, string port,int fd_socket, string filename);
+
+
+/*update the bytes of an existing peer*/
+/*invoqued by updateUpload and updateDownload*/
+peer updateBytes(peer peerToUpdate, unsigned long bytes);
 
 /*update the bytes of an existing upload by the fd socket*/
 /* this also updates the shared file "filename" bytes*/
-void updateUpload(client *cli, int fd_socket,int bytes, string filename);
+void updateUpload(client *cli, int fd_socket,unsigned long bytes, string filename);
 
 /*update the bytes of an existing download by the fd socket*/
-void updateDownload(client *cli, int fd_socket,int bytes, string filename);
+void updateDownload(client *cli, int fd_socket,unsigned long bytes, string filename);
 
 void deleteUpload(client *cli, int fd_socket);
 void deleteDownload(client *cli, int fd_socket);

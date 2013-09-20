@@ -246,31 +246,84 @@ string publish_file(trackerClient *cli,string file,string _md5) {
 /******CLIENT TO CLIENT METHODS*******/
 
 /*add new upload, if the peer upload does not exists we create a new one*/
-void addUpload(client *cli, string ip, string port,int fd, string filename) {
-
+void addUpload(client *cli, string ip, string port, int fd_socket, string filename) {
+	map<int,peer> uploads = cli->uploads;
+	if (uploads.count(fd_socket)==0) {
+		//create fileDescriptor, cambiar por invocación a función
+		fileDescriptor fdesc;
+		int fd; unsigned long size;
+		string _md5 = getMD5(BASE_DIR+filename,fd,size);
+		if (_md5.size() > 0) {
+   	     	 fdesc.name = filename;			
+			 fdesc.md5 = _md5;
+			 fdesc.fd = fd;
+			 fdesc.size = size;
+			 fdesc.bytes_transfered = 0;
+		}
+		//create peer, ¿cambiar por invocación a función?
+		peer peerUpload;
+		peerUpload.ip = ip;
+		peerUpload.port = port;
+		peerUpload.peer_file=fdesc;
+		//add peer to uploads
+		uploads.insert(std::pair<int,peer>(fd_socket,peerUpload));
+		cli->uploads=uploads;
+	}
 }
 /*add new download, if the peer download does not exists we create a new one*/
-void addDownload(client *cli, string ip, string port,int fd, string filename) {
+void addDownload(client *cli, string ip, string port, int fd_socket, string filename) {
+	map<int,peer> downloads = cli->downloads;
+	if (downloads.count(fd_socket)==0) {
+		//create fileDescriptor, cambiar por invocación a función
+		fileDescriptor fdesc;
+		int fd; unsigned long size;
+		string _md5 = getMD5(BASE_DIR+filename,fd,size);
+		if (_md5.size() > 0) {
+   	     	 fdesc.name = filename;			
+			 fdesc.md5 = _md5;
+			 fdesc.fd = fd;
+			 fdesc.size = size;
+			 fdesc.bytes_transfered = 0;
+		}
+		//create peer, ¿cambiar por invocación a función?
+		peer peerDownload;
+		peerDownload.ip = ip;
+		peerDownload.port = port;
+		peerDownload.peer_file=fdesc;
+		//add peer to downloads
+		downloads.insert(std::pair<int,peer>(fd_socket,peerDownload));
+		cli->downloads=downloads;
+	}
+}
 
+/*update the bytes of an existing peer*/
+/*invoqued by updateUpload and updateDownload*/
+peer updateBytes(peer peerToUpdate, unsigned long bytes) {
+	peerToUpdate.peer_file.bytes_transfered=peerToUpdate.peer_file.bytes_transfered+bytes;
+	return peerToUpdate;
 }
 
 /*update the bytes of an existing upload by the fd socket*/
 /* this also updates the shared file "filename" bytes*/
-void updateUpload(client *cli, int fd_socket,int bytes, string filename) {
-
+void updateUpload(client *cli, int fd_socket, unsigned long bytes, string filename) {
+	peer peerToUpdate = (cli->uploads)[fd_socket];
+    (cli->uploads)[fd_socket]=updateBytes(peerToUpdate,bytes);
+    fileDescriptor file = (cli->shared_files)[filename];
+    file.bytes_transfered = file.bytes_transfered + bytes;
 }
 
 /*update the bytes of an existing download by the fd socket*/
-void updateDownload(client *cli, int fd_socket,int bytes, string filename) {
-
+void updateDownload(client *cli, int fd_socket,unsigned long bytes, string filename) {
+    peer peerToUpdate = (cli->downloads)[fd_socket];
+    (cli->downloads)[fd_socket]=updateBytes(peerToUpdate,bytes);
 }
 
 void deleteUpload(client *cli, int fd_socket) {
-
+	(cli->uploads).erase(fd_socket);
 }
 
 void deleteDownload(client *cli, int fd_socket) {
-
+	(cli->downloads).erase(fd_socket);
 }
 
 /****************************************/
