@@ -16,7 +16,7 @@ using namespace std;
 
 #define MAX_PEERS 500
 
-// A conexion has all the information about the state of a peer to peer conexion 
+/* A conexion has all the information about the state of a peer to peer conexion 
 typedef struct conexion
 {
    bool primero;
@@ -28,7 +28,7 @@ typedef struct conexion
    int rval;
    bool leer;
    int total;
-} conexion;
+} conexion;*/
 
 typedef struct fileDescriptor
 {

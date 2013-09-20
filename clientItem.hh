@@ -13,7 +13,7 @@ using namespace std;
 typedef struct fileDescriptor fileDescriptor;
 typedef struct client client;
 typedef struct peer peer;
-typedef struct conexion conexion;
+//typedef struct conexion conexion;
 
 /*tracker*/
 typedef struct trackerClient trackerClient;

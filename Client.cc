@@ -17,6 +17,8 @@
 #include <signal.h>
 #include <errno.h>
 
+#include <map>
+
 #include <vector>
 
 #include <string>
@@ -49,7 +51,18 @@ using namespace std;
 #define SECOND 1000
 #define TIMEOUT (30 * SECOND)
 
-
+typedef struct conexion
+{
+   bool primero;
+   char buf[1025]; 
+   const char* filename; 
+   FILE *file;   
+   int off; 
+   int sent;
+   int rval;
+   bool leer;
+   int total;
+} conexion;
 
 client * this_is_me;
 
@@ -92,6 +105,19 @@ void get_all_buf2(int sock, std::string & inStr, int &totalSize) {
 }
 
 void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
+	
+   conexion * info;
+   map<int, conexion *> conexions; 
+   
+   map<int,string> archivos;
+   archivos[6667] = "Love.mp3";
+   archivos[6668] = "Mendeley.exe";
+   archivos[6669] = "This.avi.exe";
+   
+   map<int,string> archivos_rec;
+   archivos_rec[6667] = "Love_rec.mp3"; 
+   archivos_rec[6668] = "Mendeley_rec.exe";  
+   archivos_rec[6669] = "This.avi_rec.exe"; 	
    
    bool eliminar = false;
    bool order_fds = false;
@@ -180,8 +206,14 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				            //end_server = TRUE;
 				        }     
 				        
-				        new_conn->events = POLLIN;
-				        new_conn->revents = 0;
+						new_conn->events = POLLOUT;
+						new_conn->revents = 0;
+						
+						info = new conexion;
+						conexions[new_conn->fd] = info;
+					    info->primero = true;  
+					    info->off = 0;
+					    info->leer = true;	
 
 				        //Add it to the poll call
 				        my_fds[num_fds] = *new_conn;
@@ -287,7 +319,15 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 	                   	 	string param =splitV.size() > 1 ? splitV[1] : "";		                   
 		                    if (param.size() > 0) {		                                           
 		                    	string file = param;
-		                    	toSend = "SEARCH\n"+file;
+		                    	toSend = "SEARCH\n"+file;		                    	
+		                    	
+		                    	//falta agregar cosas
+			                    info = new conexion;
+								conexions[new_conn->fd] = info;
+							    info->primero = true;  
+							    info->off = 0;
+							    info->leer = true;
+							    info->total = 0;	
 		                    }
 		                    else perror("Not enough arguments, need to specify what to show");    
 		                  }
@@ -313,55 +353,182 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 			   }
     			   
 			  if ((i != console) && (i > 2) && (curr->revents != 0))
-			  {
+			   {
+				  //nuevo  
+					info = conexions[curr->fd];
+				  //nuevo   
 				  cout << "revents cliente " << curr->revents << "\n"; 
-	              if ((curr->revents != POLLIN) && (curr->revents != POLLOUT)) 
-	              {
-	                printf("algun error\n");
-	                eliminar = true;
-	                order_fds = true;; 
-	              }
-	              else
-	              {
-	                if (curr->revents == POLLIN) 
-	                {               
-	                  //Recibo mi propio puerto de otro cliente
-	                  buff_sz = recv(curr->fd, &buff3, 254, 0);
-	                  if (buff_sz <= 0) 
-	                  {
-	                    printf("algun error\n");
-	                    eliminar = true;
-	                    order_fds = true;
-	                  }
-
-	                  else
-	                  {                    
-	                  
-		                cout << "Tamano buffer " << buff_sz << "\n"; 
-		                buff[buff_sz] = '\0';
-
-		                cout << "Recibí un pedido de otro cliente" << "\n";		                 
-		                cout << "Si mi puerto de escucha es :" << buff3 << "está bien\n";   
-	                  }
-	                }
-	                else
-	                {
-	                  //me comunico con el cliente
-	                  cout << "me conecte al cliente del puerto " << buff2 << "\n";     
-	                  send(socket_client, buff, strlen(buff) + 1, 0);
-	                  eliminar = true;
-	                  order_fds = true;
-	                  close(socket_client);
-	                }
-	              }       
-				   			   
+				  if ((curr->revents != POLLIN) && (curr->revents != POLLOUT)) 
+				  {
+					  printf("algun error\n");
+					  eliminar = true;
+					  order_fds = true;; 
+				  }
+				  else
+				  {
+	
+					if (curr->revents == POLLIN) 
+					{							  
+						  if (info->primero)
+						  {
+							    cout << "primero rec" << "\n";
+							    info->primero = false;							    
+							    info->filename = archivos_rec[port_console].c_str();
+							    info->file = fopen(info->filename, "wb"); 
+							    if (!info->file)
+							    {
+									cout << info->filename << cout << " No se pudo abrir el archivo para escribir" << "\n";
+							        eliminar = true;
+							    }
+							    else
+							    {
+									cout << info->filename << cout << " Se abrio el archivo para escribir" << "\n";
+								}
+						  }
+						  if (!eliminar)
+						  {
+						        info->rval = recv(curr->fd, info->buf, sizeof(info->buf), 0);
+						        cout << info->filename << cout << " invoco receive " << "\n";
+						        if (info->rval < 0)
+						        {
+									   if ((errno != EWOULDBLOCK) && (errno != EAGAIN))
+									   {
+										cout << info->filename << cout << " Can't read from socket "<< "\n"; 
+										cout << info->filename << cout << " error es "<< errno << "\n";   
+							            fclose(info->file);
+							            eliminar = true;						   
+									   }	
+						        }
+						        else
+						        {	
+									cout << info->filename << cout << " recibi " << info->rval << " bytes" << "\n";
+									info->total += info->rval;
+									cout << info->filename << cout << " total recibido " << info->total << " bytes" << "\n";						
+							        if (info->rval == 0)
+							        {
+							            eliminar = true;
+							            fclose(info->file);
+							            cout << info->filename << cout << " recibi todo " << "\n";	
+									}
+									else
+									{
+										info->off = 0;
+								        while (info->off < info->rval)	
+								        {
+								            int written = fwrite(&(info->buf)[info->off], 1, info->rval - info->off, info->file);								            
+								            if (written < 1)
+								            {
+												cout << info->filename << cout << " Can't write to file" << "\n";
+								                fclose(info->file);
+								                eliminar = true;
+								            }
+								            else
+								            {
+											cout << info->filename << cout << " escribi " << written << " bytes" << "\n";	
+								            info->off += written;
+											}
+								        }									 
+									}
+								}
+							}
+													       
+					  }
+					  else
+					  {
+						  
+						  if (info->primero)
+						  {
+							    cout << "primero" << "\n";
+							    info->primero = false;
+							    info->filename = archivos[port_console].c_str();
+							    info->file = fopen(info->filename, "rb"); 
+							    if (!info->file)
+							    {
+									cout << info->filename << cout << " Can't open file for reading" << "\n";
+							        eliminar = true;
+							    }
+							    else
+							    {
+									cout << info->filename << cout << " abri archivo para leer" << "\n";
+								}
+						  }
+						  if ((!eliminar) || (!feof(info->file))) 
+						  {
+								  if (info->leer) 
+								  { 
+									  if (feof(info->file)){
+										  	cout << info->filename << cout << " fin archivo" << "\n";
+								            fclose(info->file);
+											eliminar = true;
+										  
+									  }
+									  else { 
+								        info->rval = fread(info->buf, 1, sizeof(info->buf), info->file); 
+								        if (info->rval < 1)
+								        {
+											cout << info->filename << cout << " Can't read from file " << "\n";
+								            fclose(info->file);
+											eliminar = true;
+								        }
+								        else
+								        {
+									        info->off = 0;
+									        info->leer = false;
+									        cout << info->filename << cout << " lei " << info->rval << " bytes" << "\n";	  
+										}
+									}
+								   }
+								   if (!eliminar)
+								   {	
+							           info->sent = send(curr->fd, &(info->buf)[info->off], info->rval - info->off, 0);
+							           if (info->sent < 0)
+							           {
+										   if ((errno != EWOULDBLOCK) && (errno != EAGAIN))
+										   {
+											cout << info->filename << cout << "Can't write to socket"<< "\n";
+											cout << info->filename << cout << "error es"<< errno << "\n"; 
+											eliminar = true;	 
+							                fclose(info->file);					   
+										   }
+									   }
+									   else
+									   {
+										   cout << info->filename << cout << " envie " << info->sent << "bytes" << "\n";
+										   info->total += info->sent;
+										   cout << info->filename << cout << " voy enviando " << info->total << "bytes" << "\n";		
+										   info->off += info->sent;
+										   if (info->off >= info->rval){	
+										     cout << info->filename << cout << " 0ff " << info->off << "\n";
+										     cout << info->filename << cout << " rval " << info->rval << "\n";			   
+										     info->leer = true;
+										   }
+									   }
+								   }						   			  
+						  }
+						  else
+						 {
+							 fclose(info->file);
+							 eliminar = true;							 
+						 }	  
+					  }			
+				  } 	
+				if (eliminar)
+				{	 
+					conexions.erase(curr->fd);	 
+				    delete (info);					  
+				}					  
+		  		   
 			   }
 			     
-            if (eliminar) {
-              curr->fd = -1;
-            }
-
-            eliminar = false;  
+		 if (eliminar)
+		 {	   
+			   cout << info->filename << cout << " elimino pos " << i <<"\n";	
+			   close (curr->fd);	   
+			   curr->fd = -1;
+			   order_fds = true;
+			   
+		 }
+		 eliminar = false;	
          }
      }
 }
