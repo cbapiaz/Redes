@@ -22,7 +22,11 @@
 #include <errno.h>
 
 #include <string>
-#include <iostream>
+#include <iostream>	
+
+#include <sstream>
+
+#include <vector>
 using namespace std;
 
 #define MAXLEN 1024
@@ -161,4 +165,41 @@ static void get_all_buf(int sock, std::string & inStr, int &totalSize) {
     totalSize = total-2;
     inStr = temp;
     inStr = inStr.substr(0, inStr.size()-2); //all characters except the line break
+}
+
+static vector<std::string> parseResponse (std::string s,std::string &md5)
+{
+    vector<std::string> vect;
+    int i = 0;
+    bool prim = true;
+	std::string delimiter = "\n";
+	
+	size_t pos = 0;
+	std::string token;
+	while ((pos = s.find(delimiter)) != std::string::npos) {
+	    token = s.substr(0, pos);
+	    if (i == 1){
+			md5 = token;
+		}
+		if (i > 1)
+		{
+			vect.push_back (token);
+		}
+	    std::cout << token << std::endl;	  
+	    s.erase(0, pos + delimiter.length());
+		i++;
+	}
+	//vect.push_back (token);
+	std::cout << s;
+	return vect;	  
+}
+
+static void choosePeer( vector<std::string> list, std::string &ip, std::string &port)
+{
+	int number = (rand () % (list.size()));	
+	std::string s = list[number];
+	int pos = s.find (":");
+	ip = s.substr(0,pos);
+	port = s.substr(pos+1);
+
 }

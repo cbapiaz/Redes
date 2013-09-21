@@ -62,6 +62,9 @@ void updateDownload(client *cli, int fd_socket,unsigned long bytes, string filen
 void deleteUpload(client *cli, int fd_socket);
 void deleteDownload(client *cli, int fd_socket);
 
+/*get the filename wth a MD5*/
+std::string getFilename (client *cli,std::string md5);
+
 /****************************************/
 
 

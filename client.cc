@@ -21,6 +21,8 @@
 
 #include <vector>
 
+#include <queue>
+
 #include <string>
 
 #include "clientItem.hh"
@@ -123,6 +125,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
    bool order_fds = false;
    int console,console_fds;
    struct pollfd my_fds[MAX_CONN];
+   queue<std::string> filenames;
 
    struct pollfd *curr, *new_conn;          //so I can loop through   
    int num_fds=0;                             //count of how many are being used
@@ -134,7 +137,8 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
    int buff_sz;                             //size of data recieved
    int socket_client;
    console = -1;
-   order_fds = false;          
+   order_fds = false; 
+   bool download = false;      
 
 
     //Creo entrada[0] de my_fds con el socket de la conexión con el cliente
@@ -162,6 +166,8 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
     curr->revents = 0;
 
     my_fds[2] = *curr;
+    
+    srand(time(0));
 
 
     //Inicializo la cantidad de fds en 3
@@ -204,7 +210,21 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				        {
 				            perror("  accept() failed");
 				            //end_server = TRUE;
-				        }     
+				        }
+				        
+				             
+				        char buf[MAX_BUFF_SIZE];
+				        int size_buf = recv(new_conn->fd, buf, sizeof(buf), 0);
+				        buf[size_buf]='\0';
+                	    cout<<"El downloader pide:"<< buf;
+				        // elimino \n
+				        string out(buf);
+				        std::string delimiter = "\n";
+						int pos = out.find("\n");
+					    std::string token = out.substr(0, pos);	  
+						out.erase(0, pos + delimiter.length());		        
+				        
+				        
 				        
 						new_conn->events = POLLOUT;
 						new_conn->revents = 0;
@@ -213,7 +233,8 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 						conexions[new_conn->fd] = info;
 					    info->primero = true;  
 					    info->off = 0;
-					    info->leer = true;	
+					    info->leer = true;
+					    info->filename = "";	
 
 				        //Add it to the poll call
 				        my_fds[num_fds] = *new_conn;
@@ -248,6 +269,40 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
                 	int r_data_size = recv(my_fds[2].fd, data, MAX_MSG_SIZE, 0);
                 	data[r_data_size]='\0';
                 	cout<<"El tracker responde:"<< data<<"\n";
+                	string out(data);
+                	if (out.find("FILE"))
+                	{						
+						std::string ip,port,md5;
+						vector<std::string> list = parseResponse (out,md5);
+						choosePeer(list,ip,port);						
+						int sock = connect_socket(ip.c_str(),(char*)port.c_str());
+						md5 += "\n";
+						send(serv_socket, md5.c_str(), md5.size(), 0);
+						
+						setNonBlocking(sock);
+						
+						//agrego uploader
+						new_conn = (struct pollfd*) malloc(sizeof(struct pollfd));
+						new_conn->fd = sock;
+						new_conn->events = POLLIN;
+						new_conn->revents = 0;
+						
+					    
+					  
+						my_fds[num_fds] = *new_conn;
+						num_fds++;
+						
+						info = new conexion;
+						conexions[new_conn->fd] = info;
+					    info->primero = true;  
+					    info->off = 0;
+					    info->leer = true;
+					    info->total = 0;
+					    
+					    //obtengo filename
+					    info->filename = filenames.front().c_str();
+					    filenames.pop();
+					}
     			 }
     			 
     				
@@ -318,16 +373,12 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 		                  if (command.find("download") != std::string::npos) { //download command
 	                   	 	string param =splitV.size() > 1 ? splitV[1] : "";		                   
 		                    if (param.size() > 0) {		                                           
-		                    	string file = param;
-		                    	toSend = "SEARCH\n"+file;		                    	
-		                    	
-		                    	//falta agregar cosas
-			                    info = new conexion;
-								conexions[new_conn->fd] = info;
-							    info->primero = true;  
-							    info->off = 0;
-							    info->leer = true;
-							    info->total = 0;	
+		                    	string file = param;		                    	
+		                    	toSend = "SEARCH\n"+file;
+		                    	filenames.push (file);
+		                    	if (toSend.size() > 0)                    	
+									download = true;
+
 		                    }
 		                    else perror("Not enough arguments, need to specify what to show");    
 		                  }
@@ -337,6 +388,8 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 		                    cout << "Cerrando cliente.. \n";
 		                    exit(0);
 		                  }
+		                  //guardo el nombre del filename		                  
+		                  
                                               
         				  // en out queda gurdado lo que recibo por telnet
         				  				  
@@ -373,7 +426,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 						  {
 							    cout << "primero rec" << "\n";
 							    info->primero = false;							    
-							    info->filename = archivos_rec[port_console].c_str();
+							    //info->filename = archivos_rec[port_console].c_str();
 							    info->file = fopen(info->filename, "wb"); 
 							    if (!info->file)
 							    {
@@ -444,12 +497,12 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 							    info->file = fopen(info->filename, "rb"); 
 							    if (!info->file)
 							    {
-									cout << info->filename << cout << " Can't open file for reading" << "\n";
+									cout << info->filename << cout << "No se puede abrir el archivo para leer" << "\n";
 							        eliminar = true;
 							    }
 							    else
 							    {
-									cout << info->filename << cout << " abri archivo para leer" << "\n";
+									cout << info->filename << cout << " Abri archivo para leer" << "\n";
 								}
 						  }
 						  if ((!eliminar) || (!feof(info->file))) 
@@ -457,7 +510,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 								  if (info->leer) 
 								  { 
 									  if (feof(info->file)){
-										  	cout << info->filename << cout << " fin archivo" << "\n";
+										  	cout << info->filename << cout << " Fin archivo" << "\n";
 								            fclose(info->file);
 											eliminar = true;
 										  

@@ -340,6 +340,21 @@ void deleteDownload(client *cli, int fd_socket) {
 	(cli->downloads).erase(fd_socket);
 }
 
+std::string getFilename (client *cli,std::string md5)
+{
+	std::string name;
+	bool encontre = false;
+	map<string,fileDescriptor> m = cli->shared_files;
+   for(std::map<string,fileDescriptor>::const_iterator it = m.begin(); ((!encontre) && (it != m.end())); it++)
+   {  
+	  fileDescriptor fd = (fileDescriptor)(it->second);
+   	  if (fd.md5 == md5){
+		encontre = true;
+		name = fd.name;
+	  }   	  
+   }	
+}
+
 /****************************************/
 
 
