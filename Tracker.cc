@@ -58,8 +58,8 @@ using namespace std;
 void print_clients (map<int, trackerClient*> m){
 	cout << "Los clientes registrados son \n";
     for(std::map<int, trackerClient*>::const_iterator it = m.begin(); it != m.end(); it++)
-    {
-    	cout << it->first <<  "\n"; ;
+    {        
+    	cout << getcIp(it->second) <<":"<<getcPort(it->second)<<  "\n"; ;
     	//Do something
     }
 }

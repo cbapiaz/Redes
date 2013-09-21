@@ -254,6 +254,15 @@ string publish_file(trackerClient *cli,string file,string _md5) {
 	return "";
 }
 
+/** get trackerclient ip */
+string getcIp (trackerClient *cli){
+	return cli->ip;
+}
+
+/** get trackerclient port */
+string getcPort (trackerClient *cli){
+	return cli->port;
+}
 
 
 

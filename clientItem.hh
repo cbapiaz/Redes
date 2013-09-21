@@ -78,6 +78,12 @@ string search_file(map<int,trackerClient*> &trackerClients,string file);
 
 void remove_client(map<int,trackerClient*> &trackerClients, int fd);
 
+/** get trackerclient ip */
+string getcIp (trackerClient *cli);
+
+/** get trackerclient port */
+string getcPort (trackerClient *cli);
+
 /*******************************************************************/
 
 #endif 

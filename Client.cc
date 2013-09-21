@@ -29,6 +29,7 @@
 
 #include "util.hh"
 
+#include <fstream>
 #include <iostream>
 using namespace std;
 
@@ -533,48 +534,115 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
      }
 }
 
+
+
 #define TRACKER_IP "127.0.0.1"
 #define TRACKER_PORT "6666"
+
+
+char* myip=(char*)"";
+char* acceptport=(char*)"";
+char* consoleport=(char*)"";
+char* trackerIp=(char*)"";
+char* trackerPort=(char*)"";
+
+bool readProperties(const char * propfile) {
+	ifstream infile(propfile);
+		
+	if (infile.good()) {
+		printf("good file\n");
+		//infile.open();
+		string line;
+		vector<string> propValues;	
+		while (std::getline(infile, line)){			
+		    splitstring s(line);
+		    vector<string> sV = s.split('=',1);
+			string paramKey = sV[0];
+			string paramVal = sV[1];
+			propValues.push_back(paramVal);
+		}
+
+		infile.close();
+
+		
+
+		myip=(char*)propValues.at(0).c_str();
+		myip[propValues.at(0).size()-1] = '\0';
+
+		acceptport=(char*)propValues.at(1).c_str();
+		acceptport[propValues.at(1).size()-1] = '\0';
+
+		consoleport=(char*)propValues.at(2).c_str();
+		consoleport[propValues.at(2).size()-1] = '\0';
+
+		trackerPort=(char*)propValues.at(3).c_str();
+		trackerPort[propValues.at(3).size()-1] = '\0';
+
+		trackerIp=(char*)propValues.at(4).c_str();
+		trackerIp[propValues.at(4).size()-1] = '\0';
+
+
+		return true;
+	}
+	else {
+		printf("not good file\n");
+		return false; 	
+	}
+}
+
+char* Concatenate(const char* first, const char* second)
+{
+  char* mixed = new char[strlen(first) + strlen(second) + 2 /* for the ': ' */ + 1 /* for the NULL */];
+  strcpy(mixed, first);
+  strcat(mixed, ": ");
+  strcat(mixed, second);
+
+  return mixed;
+}
 
 int main(int argc, char *argv[])
 {
     int sockfd,port_accept,port_console;
 
+    if (!readProperties("client.properties")){
+	    
+	    if (argc < 4) {
+	       fprintf(stderr,"No property file found, must provide parameters:  %s hostname acceptport consoleport\n", argv[0]);
+	       exit(0);
+	    }	  
+    	
+    	myip = argv[1];				
+		acceptport = argv[2];			
+		consoleport = argv[3];	
 
-    if (argc < 4) {
-       fprintf(stderr,"usage %s hostname acceptport consoleport\n", argv[0]);
-       exit(0);
-    }
-    
-	  printf("Comienza cliente \n");
-	  printf("Me conecto al servidor \n");
-    
-	char * myip = argv[1];
-	char * acceptport = argv[2];
-	char * consoleport = argv[3];
-	char * trackerIp = (char*)TRACKER_IP;
-	char * trackerPort = (char*)TRACKER_PORT;
-
-
-	if (argc > 4) {
-		trackerPort = argv[4];		
+    	trackerPort = (char*)TRACKER_PORT;		
+    	trackerIp = (char*)TRACKER_IP;					
+		
+		if (argc > 4)
+			trackerPort = argv[4];		
+		
+		if (argc > 5)
+			trackerIp = argv[5];
+	
 	}
+	
+	printf("myip=%s\naccept=%s\nconsole=%s\ntrackerport=%s\ntrackerip=%s\r\n",myip,acceptport,consoleport,trackerPort,trackerIp);
 
-	if (argc > 5) {
-		trackerIp = argv[5];
-	}
-
+	printf("Comienza cliente \n");
+	printf("Me conecto al servidor \n");
 
     this_is_me = client_create(myip, acceptport);
 
     //connect to tracker
-    sockfd = connect_socket(trackerIp,trackerPort) ;    
-
-    char buff[MAX_BUFF_SIZE];    
-    sprintf(buff, "NEWCLIENT\n%s:%s\r\n", myip, acceptport);
-
-    cout<<"message to send:"<<buff<<"\n";
-    send(sockfd, buff, strlen(buff), 0);    
+    sockfd = connect_socket(trackerIp,trackerPort);    
+    
+    const char* s1 = myip;
+    const char* s2 = acceptport;
+    const char* sep =":";
+    char msg[MAX_BUFF_SIZE];        
+	sprintf(msg, "NEWCLIENT\n%s:%s", myip,acceptport);
+	printf("%s\n", msg);    
+    send(sockfd, msg, sizeof(msg), 0);    
     
     port_accept = (int)strtol(acceptport,NULL,10);
     port_console = (int)strtol(consoleport,NULL,10);
