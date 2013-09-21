@@ -244,10 +244,8 @@ void pollserver(int port_accept) {
                                     string md5 = splitV[2];
                                     
                                     string res = publish_file(clients[curr->fd],fileName,md5);
-                                    if (res=="") {
-                                        sprintf(buff, "ok");
-                                    }
-                                    else sprintf(buff, "fail\n%s\r\n",res.c_str());
+                                    sprintf(buff, res.c_str());
+                                    
                                 }
 
                                 send(curr->fd, buff, strlen(buff), 0);
@@ -269,7 +267,7 @@ void pollserver(int port_accept) {
                                     sprintf(buff, "%s",result.c_str());
                                 }
 
-                                send(curr->fd, buff, strlen(buff), 0);
+                                 send(curr->fd, buff, strlen(buff), 0);
 			              }			              						 
 						  
 					  }

@@ -238,26 +238,33 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
                 	int r_data_size = recv(my_fds[2].fd, data, MAX_MSG_SIZE, 0);
                 	data[r_data_size]='\0';
                 	cout<<"El tracker responde:"<< data<<"\n";
-                	string saux(data);
-                	splitstring s1(saux);
-                	vector<string> v= s1.split('\n',1);
-                	string res = v[0];
                 	
-                    if (res.compare("fail")==0) {     
+                	/*if (strchr(data,'\n')!=0) {
+	                	string saux(data);
+	                	splitstring s1(saux);
+	                	
+	                	vector<string> v= s1.split('\n',1);
+	                	
+	                	if (s1.size() >0) {
+		                	string res = v[0];
+		                	
+		                    if (res.compare("fail")==0) {     
 
-                    	vector<string> sperr = splitstring(v[1]).split(':',1);
-                    	string err_cmd=sperr[0];
-                    	string err_msg=sperr[1];
+		                    	vector<string> sperr = splitstring(v[1]).split(':',1);
+		                    	string err_cmd=sperr[0];
+		                    	string err_msg=sperr[1];
 
-                    	//if newclient fails we close the client
-                    	if (err_cmd.compare("NEWCLIENT") == 0){
-		                    close_client(my_fds,num_fds);
-                    	}
-                    	else {
-                    		printf("Error on command %s: %s",err_cmd.c_str(),err_msg.c_str());
-                    	}
+		                    	//if newclient fails we close the client
+		                    	if (err_cmd.compare("NEWCLIENT") == 0){
+				                    close_client(my_fds,num_fds);
+		                    	}
+		                    	else {
+		                    		printf("Error on command %s: %s",err_cmd.c_str(),err_msg.c_str());
+		                    	}
 
-                	}
+		                	}
+	                	}
+                	}*/
 
     			 }
     			 
@@ -663,3 +670,4 @@ int main(int argc, char *argv[])
 
    
 }
+

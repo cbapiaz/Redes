@@ -162,3 +162,4 @@ static void get_all_buf(int sock, std::string & inStr, int &totalSize) {
     inStr = temp;
     inStr = inStr.substr(0, inStr.size()-2); //all characters except the line break
 }
+
