@@ -179,10 +179,10 @@ void pollserver(int port_accept) {
             				my_fds[num_fds] = *new_conn;
             				num_fds++;	            			
             				
-            				addNewTrackerClient(clients,new_conn->fd,ip,port);
+            				string res = addNewTrackerClient(clients,new_conn->fd,ip,port);
                             //clients[new_conn->fd] = client_create(ip,port);
             				print_clients(clients);
-            				sprintf(buff, "ok");
+            				sprintf(buff, res.c_str());
                         }
                     }
 
@@ -275,8 +275,12 @@ void pollserver(int port_accept) {
 					  }
 				  }
 			   }
-		 if (eliminar)	   
+
+		 if (eliminar){	   
+               remove_client(clients,curr->fd);
 			   curr->fd = -1;
+
+         }
 		 eliminar = false;	
          }
      }
