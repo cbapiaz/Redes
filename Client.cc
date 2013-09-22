@@ -239,7 +239,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
                 	data[r_data_size]='\0';
                 	cout<<"El tracker responde:"<< data<<"\n";
                 	
-                	/*if (strchr(data,'\n')!=0) {
+                	if (strchr(data,'\n')!=0) {
 	                	string saux(data);
 	                	splitstring s1(saux);
 	                	
@@ -264,7 +264,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 
 		                	}
 	                	}
-                	}*/
+                	}
 
     			 }
     			 
