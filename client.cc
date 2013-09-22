@@ -356,9 +356,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				  }
 				  else
 				  {				                         	             
-					  cout<<"ingrese consola\n";
-					  cout<<"revents consola "<< curr->revents << "\n";
-		    		  char data[MAX_BUFF_SIZE];
+					  char data[MAX_BUFF_SIZE];
 			          int size = recv(curr->fd, data, MAX_BUFF_SIZE, 0);
 			          
 			          if (size == 0) {

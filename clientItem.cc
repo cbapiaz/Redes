@@ -280,6 +280,9 @@ string getcPort (trackerClient *cli){
 	return cli->port;
 }
 
+void remove_client(map<int,trackerClient*> &trackerClients, int fd) {
+	trackerClients.erase(fd);
+}
 
 
 /******CLIENT TO CLIENT METHODS*******/
