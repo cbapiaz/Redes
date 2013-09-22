@@ -190,11 +190,13 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 	          order_fds = false;     
 	          num_fds = order(my_fds, num_fds);
 	          cout << "ordeno" << "\n";
-	          /*if (console != -1)
-	            console = new_console_pos(my_fds,num_fds,console_fds);*/
+	          if (console != -1){
+	           console = new_console_pos(my_fds,num_fds,console_fds);
+	           cout << "console ahora es " <<  console << "\n";
+			  }
          }     
          
-         printf("%s","if (poll(my_fds, num_fds, -1) == -1)\n");
+         //printf("%s","if (poll(my_fds, num_fds, -1) == -1)\n");
          if (poll(my_fds, num_fds, -1) == -1)
          {
             perror("poll");
@@ -218,8 +220,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				            perror("  accept() failed");
 				            //end_server = TRUE;
 				        }
-				        
-				             
+			             
 				        char buf[MAX_BUFF_SIZE];
 				        int size_buf = recv(new_conn->fd, buf, sizeof(buf), 0);
 				        buf[size_buf]='\0';
@@ -229,9 +230,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				        /*std::string delimiter = "\n";
 						int pos = out.find("\n");
 					    std::string token = out.substr(0, pos);	  
-						out.erase(0, pos + delimiter.length());*/		        
-				        
-				        
+						out.erase(0, pos + delimiter.length());*/					        
 				        
 						new_conn->events = POLLOUT;
 						new_conn->revents = 0;
@@ -255,18 +254,28 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 
     					//Accept the connection
     					sin_size = sizeof their_addr;
-    					new_conn = (struct pollfd*) malloc(sizeof(struct pollfd));
-    					new_conn->fd = accept(curr->fd, (struct sockaddr *)&their_addr, &sin_size);
-    					new_conn->events = POLLIN;
-    					new_conn->revents = 0;
-    					
-    					cout << "Agrego el socket de la consola a las posición " <<  num_fds << "\n";					
-    					
-    					//Add it to the poll call
-    					my_fds[num_fds] = *new_conn;
-    					console = num_fds;
-    					
-    					num_fds++;
+    					int con_sock = accept(curr->fd, (struct sockaddr *)&their_addr, &sin_size);
+    					if (console != -1)
+    					{
+							cout << "La consola del cliente ya se encuentra abierta \n";
+							close (con_sock);
+						}
+						else
+    					{    					
+	    					new_conn = (struct pollfd*) malloc(sizeof(struct pollfd));
+	    					new_conn->fd = con_sock; 
+	    					new_conn->events = POLLIN;
+	    					new_conn->revents = 0;
+	    					
+	    					cout << "Agrego el socket de la consola a las posición " <<  num_fds << "\n";					
+	    					
+	    					//Add it to the poll call
+	    					my_fds[num_fds] = *new_conn;
+	    					console = num_fds;
+	    					console_fds = new_conn->fd;
+	    					
+	    					num_fds++;
+						}
     			 }
 
 
@@ -324,102 +333,115 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
     				
 
     			 if ((i == console) && (curr->revents != 0))
-    			 {                       	             
-
-	    		  char data[MAX_BUFF_SIZE];
-		          int size = recv(curr->fd, data, MAX_BUFF_SIZE, 0);
-		          data[size]='\0';
-		          string out(data);
-
-		          auxConsole = auxConsole + out;
-
-	              if (size <=0){
-	                 printf("Console size<=0, algun error\n");
-	                 eliminar = true;
-	                 order_fds = true;
-	              }
-	              else if (strchr(data,'\n')!=0) {
-	              		  
-						  auxConsole = auxConsole.size() > 2 ? auxConsole.substr(0, auxConsole.size()-2) : auxConsole;
-
-        				  splitstring s(auxConsole);        				          				          				 
-
-		                  vector<string> splitV = s.split(' ',1);
-
-			              string command = splitV[0];
-
-			              string toSend="";
-        				  
-		                  if (command.find("show") != std::string::npos) { //show command
-		                    string param =splitV.size() > 1 ? splitV[1] : "";
-		                    //cout <<"param:#"<<param<<"#\n";
-		                    if (param.size() > 0) {
-
-		                      if (param.find("share") != std::string::npos) { //"show share" muestra todos los archivos compartidos y los bytes transmitidos
-		                          print_shared_files(this_is_me);
-		                      }
-		                      else if (param.find("downloads") != std::string::npos) { //"show downloads" muestra todas las descargas actuales para este cliente, junto con la dir del uploader y bytes descargados
-		                          print_downloads(this_is_me);
-		                      }
-		                      else if (param.find("uploads") != std::string::npos) { //"show uploads" muestra todas las cargas en progreso, junto con la dirección del downloader y los bytes entregados
-		                          print_uploads(this_is_me);
-		                      }
-		                      else perror("Invalid argument for show command");                        
-
-
-		                    }
-		                    else perror("Not enough arguments, need to specify what to show");                        
-		                  }
-
-		                  if (command.find("share") != std::string::npos) { //share command			                    
-		                    //cout <<"console command:"<<splitV.size()<<"-"<<command<<"\n";
-		                    string file =splitV.size() > 1 ? splitV[1] : "";
-
-		                    if (file.size() > 0) {
-		                      
-		                      cout << "file to share:@"<<file<<"@\n";
-		                      share_file(this_is_me,file);      
-		                      
-		                      toSend = "PUBLISH\n"+file+"\n"+getFileMD5(this_is_me,file)+"\r\n";
-		                    }
-		                    else perror("Not enough arguments, need to specify file to share");                        
-		                  }
+    			 {
+				  if ((curr->revents != POLLIN) && (curr->revents != POLLOUT)) 
+				  {
+					  printf("algun error\n");
+					  eliminar = true;
+					  order_fds = true;; 
+				  }
+				  else
+				  {				                         	             
+					  cout<<"ingrese consola\n";
+					  cout<<"revents consola "<< curr->revents << "\n";
+		    		  char data[MAX_BUFF_SIZE];
+			          int size = recv(curr->fd, data, MAX_BUFF_SIZE, 0);
+			          
+			          if (size == 0) {
+							printf("cerre consola \n");
+							eliminar = true;
+							order_fds = true;; 						  
+					  }
+					  else
+					  {
+				          data[size]='\0';
+				          string out(data);
+		
+				          auxConsole = auxConsole + out;
+		
+			              if (strchr(data,'\n')!=0) {
+			              		  
+								  auxConsole = auxConsole.size() > 2 ? auxConsole.substr(0, auxConsole.size()-2) : auxConsole;
+		
+		        				  splitstring s(auxConsole);        				          				          				 
+		
+				                  vector<string> splitV = s.split(' ',1);
+		
+					              string command = splitV[0];
+		
+					              string toSend="";
 		        				  
-
-		                  if (command.find("download") != std::string::npos) { //download command
-	                   	 	string param =splitV.size() > 1 ? splitV[1] : "";		                   
-		                    if (param.size() > 0) {		                                           
-		                    	string file = param;		                    	
-		                    	toSend = "SEARCH\n"+file;
-		                    	filenames.push (file);
-		                    	if (toSend.size() > 0)                    	
-									download = true;
-
-		                    }
-		                    else perror("Not enough arguments, need to specify what to show");    
-		                  }
-
-		                  if (auxConsole.compare("quit")==0) {         
-		                    //delete this_is_me;   
-		                    cout << "Cerrando cliente.. \n";
-		                    exit(0);
-		                  }
-		                  //guardo el nombre del filename		                  
-		                  
-                                              
-        				  // en out queda gurdado lo que recibo por telnet
-        				  				  
-        				  //envio al servidor lo que me llego por telnet				
-
-        				  //char *toSend = (char*)auxConsole.c_str();
-        				  if (toSend.size() > 0)
-        				  	send(serv_socket, toSend.c_str(), toSend.size(), 0);
-
-              			           
-		                  auxConsole = "";		              
-	              }
-
+				                  if (command.find("show") != std::string::npos) { //show command
+				                    string param =splitV.size() > 1 ? splitV[1] : "";
+				                    //cout <<"param:#"<<param<<"#\n";
+				                    if (param.size() > 0) {
+		
+				                      if (param.find("share") != std::string::npos) { //"show share" muestra todos los archivos compartidos y los bytes transmitidos
+				                          print_shared_files(this_is_me);
+				                      }
+				                      else if (param.find("downloads") != std::string::npos) { //"show downloads" muestra todas las descargas actuales para este cliente, junto con la dir del uploader y bytes descargados
+				                          print_downloads(this_is_me);
+				                      }
+				                      else if (param.find("uploads") != std::string::npos) { //"show uploads" muestra todas las cargas en progreso, junto con la dirección del downloader y los bytes entregados
+				                          print_uploads(this_is_me);
+				                      }
+				                      else perror("Invalid argument for show command");                        
+		
+		
+				                    }
+				                    else perror("Not enough arguments, need to specify what to show");                        
+				                  }
+		
+				                  if (command.find("share") != std::string::npos) { //share command			                    
+				                    //cout <<"console command:"<<splitV.size()<<"-"<<command<<"\n";
+				                    string file =splitV.size() > 1 ? splitV[1] : "";
+		
+				                    if (file.size() > 0) {
+				                      
+				                      cout << "file to share:@"<<file<<"@\n";
+				                      share_file(this_is_me,file);      
+				                      
+				                      toSend = "PUBLISH\n"+file+"\n"+getFileMD5(this_is_me,file)+"\r\n";
+				                    }
+				                    else perror("Not enough arguments, need to specify file to share");                        
+				                  }
+				        				  
+		
+				                  if (command.find("download") != std::string::npos) { //download command
+			                   	 	string param =splitV.size() > 1 ? splitV[1] : "";		                   
+				                    if (param.size() > 0) {		                                           
+				                    	string file = param;		                    	
+				                    	toSend = "SEARCH\n"+file;
+				                    	filenames.push (file);
+				                    	if (toSend.size() > 0)                    	
+											download = true;
+		
+				                    }
+				                    else perror("Not enough arguments, need to specify what to show");    
+				                  }
+		
+				                  if (auxConsole.compare("quit")==0) {         
+				                    //delete this_is_me;   
+				                    cout << "Cerrando cliente.. \n";
+				                    exit(0);
+				                  }
+				                  //guardo el nombre del filename		                  
+				                  
+		                                              
+		        				  // en out queda gurdado lo que recibo por telnet
+		        				  				  
+		        				  //envio al servidor lo que me llego por telnet				
+		
+		        				  //char *toSend = (char*)auxConsole.c_str();
+		        				  if (toSend.size() > 0)
+		        				  	send(serv_socket, toSend.c_str(), toSend.size(), 0);
+		
+		              			           
+				                  auxConsole = "";		              
+			              }
+					}
 			   }
+		   }
     			   
 			  if ((i != console) && (i > 2) && (curr->revents != 0))
 			   {
@@ -591,7 +613,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 			     
 		 if (eliminar)
 		 {	   
-			   cout << info->filename << cout << " elimino pos " << i <<"\n";	
+			   cout << " elimino pos " << i <<"\n";	
 			   close (curr->fd);	   
 			   curr->fd = -1;
 			   order_fds = true;
