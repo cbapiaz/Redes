@@ -190,9 +190,11 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 	          order_fds = false;     
 	          num_fds = order(my_fds, num_fds);
 	          cout << "ordeno" << "\n";
-	          if (console != -1)
-	            console = new_console_pos(my_fds,num_fds,console_fds);
-         }         
+	          /*if (console != -1)
+	            console = new_console_pos(my_fds,num_fds,console_fds);*/
+         }     
+         
+         printf("%s","if (poll(my_fds, num_fds, -1) == -1)\n");
          if (poll(my_fds, num_fds, -1) == -1)
          {
             perror("poll");
@@ -240,7 +242,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 					    info->off = 0;
 					    info->leer = true;
 					    cout<<getFilename(this_is_me,out)<< "\n";
-					    info->filename = (string(UPLOADPATH) + "share1.txt").c_str();	
+					    info->filename = (string(UPLOADPATH) + getFilename(this_is_me,out)).c_str();	
 
 				        //Add it to the poll call
 				        my_fds[num_fds] = *new_conn;
