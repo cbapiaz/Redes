@@ -325,9 +325,14 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 		                    if (file.size() > 0) {
 		                      
 		                      cout << "file to share:@"<<file<<"@\n";
-		                      share_file(this_is_me,file);      
+		                      string res = share_file(this_is_me,file);      
 		                      
-		                      toSend = "PUBLISH\n"+file+"\n"+getFileMD5(this_is_me,file)+"\r\n";
+		                      if (res.compare("ok")==0) {
+		                      	toSend = "PUBLISH\n"+file+"\n"+getFileMD5(this_is_me,file)+"\r\n";
+		                      }
+		                      else {
+		                      	perror(res.c_str());
+		                      }
 		                    }
 		                    else perror("Not enough arguments, need to specify file to share");                        
 		                  }

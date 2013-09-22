@@ -95,7 +95,7 @@ string getFileMD5(client * cli, string file){
 	return cli->shared_files[file].md5;
 }
 
-void share_file(client *cli,string file) {
+string share_file(client *cli,string file) {
 	if (cli != NULL) {		 
 		 int fd; unsigned long size;
 		 string _md5 = getMD5(BASE_DIR + file,fd,size);
@@ -110,12 +110,14 @@ void share_file(client *cli,string file) {
 
 			 cli->shared_files[file] = fdesc;
 
+			 return "ok";
+
 		 }
 		 else {
-		 	perror("\nCannot share file, error calculating md5\n");
+		 	return "fail\nnshare_file: Cannot share file, error calculating md5\n";
 		 }
 	}
-	else perror ("share_file: client should not be null");
+	else return "fail\nshare_file: client should not be null";
 }
 
 void print_file(fileDescriptor& f) {	
@@ -226,9 +228,11 @@ string search_file(map<int,trackerClient*> &clients,string file) {
     		 map<string, fileDescriptor>::const_iterator itFiles=it->second->client_files.begin();
                 while(!found && itFiles != it->second->client_files.end())
                 {
-                  string __md5 =get_md5_string((unsigned char*)(itFiles->second.md5.c_str()));
+                  /*string __md5 =get_md5_string((unsigned char*)(itFiles->second.md5.c_str()));
                   string __md52 =get_md5_string((unsigned char*)(md5.c_str()));
-                  found = (__md5.compare(__md52)==0);
+                  found = (__md5.compare(__md52)==0);*/
+
+                  found = (itFiles->second.md5.compare(md5)==0);
                   itFiles++;
                 }
 
