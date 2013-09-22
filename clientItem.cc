@@ -212,11 +212,15 @@ string search_file(map<int,trackerClient*> &clients,string file) {
  		for(std::map<int, trackerClient*>::const_iterator it = clients.begin(); it != clients.end(); it++)
     	{
     		bool found = false;
-    		for(std::map<string, fileDescriptor>::const_iterator itFiles = it->second->client_files.begin(); itFiles != it->second->client_files.end(); itFiles++)
-    		{
-    			found = (itFiles->second.md5 == md5);
-    			if (found) break;
-    		}
+                map<string, fileDescriptor>::const_iterator
+				itFiles=it->second->client_files.begin();
+                while(!found && itFiles != it->second->client_files.end())
+                {
+                  string __md5 =get_md5_string((unsigned char*)(itFiles->second.md5.c_str()));
+                  string __md52 =get_md5_string((unsigned char*)(md5.c_str()));
+                  found = (__md5.compare(__md52)==0);
+                  itFiles++;
+                }
 
     		if (found) {
     			clientsWithTheFile += it->second->ip + ":" + it->second->port+"\n";
@@ -226,7 +230,7 @@ string search_file(map<int,trackerClient*> &clients,string file) {
     	}
 
     	if (foundAny) {
-    	  return "FILE\n"+get_md5_string((unsigned char*)md5.c_str())+"\n"+clientsWithTheFile+"\n";
+    	  return "FILE\n"+get_md5_string((unsigned char*)md5.c_str())+"\n"+clientsWithTheFile+"\n\n";
     	}
     	else return "fail\ncritical error MD5 not found";
  	}
@@ -356,10 +360,10 @@ std::string getFilename (client *cli,std::string md5)
 	map<string,fileDescriptor> m = cli->shared_files;
    for(std::map<string,fileDescriptor>::const_iterator it = m.begin(); ((!encontre) && (it != m.end())); it++)
    {  
-	  fileDescriptor fd = (fileDescriptor)(it->second);
-   	  if (fd.md5 == md5){
+   	  if (it->second.md5.compare(md5) == 0){
 		encontre = true;
-		name = fd.name;
+		name = it->second.name;
+		break;
 	  }   	  
    }	
 }

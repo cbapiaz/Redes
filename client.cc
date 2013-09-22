@@ -54,6 +54,10 @@ using namespace std;
 #define SECOND 1000
 #define TIMEOUT (30 * SECOND)
 
+#define DOWNLOADPATH "downloads/"
+
+#define UPLOADPATH "share/"
+
 typedef struct conexion
 {
    bool primero;
@@ -217,13 +221,13 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				        char buf[MAX_BUFF_SIZE];
 				        int size_buf = recv(new_conn->fd, buf, sizeof(buf), 0);
 				        buf[size_buf]='\0';
-                	    cout<<"El downloader pide:"<< buf;
+                	    cout<<"El downloader pide:"<< buf << "\n";
 				        // elimino \n
 				        string out(buf);
-				        std::string delimiter = "\n";
+				        /*std::string delimiter = "\n";
 						int pos = out.find("\n");
 					    std::string token = out.substr(0, pos);	  
-						out.erase(0, pos + delimiter.length());		        
+						out.erase(0, pos + delimiter.length());*/		        
 				        
 				        
 				        
@@ -235,7 +239,8 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 					    info->primero = true;  
 					    info->off = 0;
 					    info->leer = true;
-					    info->filename = "";	
+					    cout<<getFilename(this_is_me,out)<< "\n";
+					    info->filename = (string(UPLOADPATH) + "share1.txt").c_str();	
 
 				        //Add it to the poll call
 				        my_fds[num_fds] = *new_conn;
@@ -271,14 +276,22 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
                 	data[r_data_size]='\0';
                 	cout<<"El tracker responde:"<< data<<"\n";
                 	string out(data);
-                	if (out.find("FILE"))
+                	if (out.find("FILE")!= std::string::npos)
                 	{						
 						std::string ip,port,md5;
-						vector<std::string> list = parseResponse (out,md5);
-						choosePeer(list,ip,port);						
-						int sock = connect_socket(ip.c_str(),(char*)port.c_str());
-						md5 += "\n";
-						send(serv_socket, md5.c_str(), md5.size(), 0);
+						cout<<"parseo mensaje"<<"\n";
+						vector<std::string> list = parseResponse (out,md5);			
+						cout<<"tamano vector"<< list.size() << "\n";			
+						cout<<"elijo peer"<<"\n";
+						
+						choosePeer(list,ip,port);
+						cout<<"Ip elegido:"<< ip<<"\n";
+						cout<<"Puerto elegido:"<< port<<"\n";
+						cout<<"conecto con el otro cliente" << "\n";						
+						int sock = connect_socket(ip.c_str(),(char*)port.c_str());						
+						//md5 += "\n";
+						send(sock, md5.c_str(), md5.size(), 0);
+						//cout<<"MD5 es" << md5.c_str() << "\n";
 						
 						setNonBlocking(sock);
 						
@@ -301,7 +314,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 					    info->total = 0;
 					    
 					    //obtengo filename
-					    info->filename = filenames.front().c_str();
+					    info->filename = (string(DOWNLOADPATH) + filenames.front()).c_str();
 					    filenames.pop();
 					}
     			 }
@@ -494,7 +507,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 						  {
 							    cout << "primero" << "\n";
 							    info->primero = false;
-							    info->filename = archivos[port_console].c_str();
+							    //info->filename = archivos[port_console].c_str();
 							    info->file = fopen(info->filename, "rb"); 
 							    if (!info->file)
 							    {

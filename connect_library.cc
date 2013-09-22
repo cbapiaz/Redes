@@ -183,11 +183,16 @@ static vector<std::string> parseResponse (std::string s,std::string &md5)
 		}
 		if (i > 1)
 		{
-			vect.push_back (token);
+			if (token.size() > 0)
+				vect.push_back (token);
 		}
-	    std::cout << token << std::endl;	  
+	    std::cout << "el token es" << token << std::endl;	  
 	    s.erase(0, pos + delimiter.length());
 		i++;
+	}
+	for (int i = 0; i < vect.size(); i++)
+	{
+		std::cout << vect[i] << std::endl;
 	}
 	//vect.push_back (token);
 	std::cout << s;
@@ -196,7 +201,8 @@ static vector<std::string> parseResponse (std::string s,std::string &md5)
 
 static void choosePeer( vector<std::string> list, std::string &ip, std::string &port)
 {
-	int number = (rand () % (list.size()));	
+	int number = (rand () % (list.size()));
+	std::cout << "random es " << number << std::endl;	
 	std::string s = list[number];
 	int pos = s.find (":");
 	ip = s.substr(0,pos);
