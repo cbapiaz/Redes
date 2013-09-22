@@ -70,7 +70,7 @@ std::string getFilename (client *cli,std::string md5);
 
 /***************HANDLE TRACKER METHODS******************************/
 
-void addNewTrackerClient(map<int,trackerClient*> &trackerClients,int fd,string ip, string port);
+string addNewTrackerClient(map<int,trackerClient*> &trackerClients,int fd,string ip, string port);
 
 ///tracker, checkear que no exista otro archivo con el mismo nombre
 string publish_file(trackerClient *cli,string file,string _md5);

@@ -179,10 +179,10 @@ void pollserver(int port_accept) {
             				my_fds[num_fds] = *new_conn;
             				num_fds++;	            			
             				
-            				addNewTrackerClient(clients,new_conn->fd,ip,port);
+            				string res = addNewTrackerClient(clients,new_conn->fd,ip,port);
                             //clients[new_conn->fd] = client_create(ip,port);
-            				print_clients(clients);
-            				sprintf(buff, "ok");
+                            print_clients(clients);
+                            sprintf(buff, res.c_str());
                         }
                     }
 
@@ -244,10 +244,8 @@ void pollserver(int port_accept) {
                                     string md5 = splitV[2];
                                     
                                     string res = publish_file(clients[curr->fd],fileName,md5);
-                                    if (res=="") {
-                                        sprintf(buff, "ok");
-                                    }
-                                    else sprintf(buff, "fail\n%s\r\n",res.c_str());
+                                    sprintf(buff, res.c_str());
+                                    
                                 }
 
                                 send(curr->fd, buff, strlen(buff), 0);

@@ -164,10 +164,21 @@ void print_uploads(client * cli){
 }
 
 /***************TRACKER METHODS******************************/
-void addNewTrackerClient(map<int,trackerClient*> &trackerClients,int fd, string ip, string port){
-	trackerClients[fd] = new trackerClient();
-	trackerClients[fd]->ip = ip;
-	trackerClients[fd]->port = port;
+string addNewTrackerClient(map<int,trackerClient*> &trackerClients,int fd, string ip, string port){
+	bool found = false;
+	for(std::map<int, trackerClient*>::const_iterator it = trackerClients.begin(); it != trackerClients.end(); it++)
+	{
+		found = (it->second->ip == ip) && (it->second->port == port);
+		if (found) break;
+	}
+
+	if (!found) {
+		trackerClients[fd] = new trackerClient();
+		trackerClients[fd]->ip = ip;
+		trackerClients[fd]->port = port;
+		return "ok";
+	}
+	else return "fail\nNEWCLIENT:Cannot add a client with the same IP,PORT twice";
 }
 
 string get_md5_string(unsigned char* md) {
@@ -205,7 +216,7 @@ string search_file(map<int,trackerClient*> &clients,string file) {
     }     	 
 
  	if (!foundFirst) {
- 		return "fail\nFile not found";
+ 		return "fail\nSEARCH:File not found";
  	}
  	else {
  		bool foundAny = false;
@@ -216,9 +227,10 @@ string search_file(map<int,trackerClient*> &clients,string file) {
 				itFiles=it->second->client_files.begin();
                 while(!found && itFiles != it->second->client_files.end())
                 {
-                  string __md5 =get_md5_string((unsigned char*)(itFiles->second.md5.c_str()));
+                  /*string __md5 =get_md5_string((unsigned char*)(itFiles->second.md5.c_str()));
                   string __md52 =get_md5_string((unsigned char*)(md5.c_str()));
-                  found = (__md5.compare(__md52)==0);
+                  found = (__md5.compare(__md52)==0);*/
+                  found = (itFiles->second.md5.compare(md5)==0);
                   itFiles++;
                 }
 
@@ -232,7 +244,7 @@ string search_file(map<int,trackerClient*> &clients,string file) {
     	if (foundAny) {
     	  return "FILE\n"+get_md5_string((unsigned char*)md5.c_str())+"\n"+clientsWithTheFile+"\n\n";
     	}
-    	else return "fail\ncritical error MD5 not found";
+    	else return "fail\nSEARCH:Critical error MD5 not found";
  	}
 
     return "";
@@ -251,11 +263,11 @@ string publish_file(trackerClient *cli,string file,string _md5) {
 			 fdesc.bytes_transfered = 0;
 			 cli->client_files[file]=fdesc;//.push_back(
 		}
-		else return "Cannot publish the same file twice";
+		else return "fail\nPUBLISH:Cannot publish the same file twice";
 	}
-	else return "Client should not be null";
+	else return "fail\nPUBLISH:Client should not be null";
 
-	return "";
+	return "ok";
 }
 
 /** get trackerclient ip */
