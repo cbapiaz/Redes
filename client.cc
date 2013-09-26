@@ -55,14 +55,21 @@ using namespace std;
 #define TIMEOUT (30 * SECOND)
 
 #define DOWNLOADPATH "downloads/"
+//#define DOWNLOADPATH "/mnt/sda1/downloads/"
 
 #define UPLOADPATH "share/"
+//#define UPLOADPATH "/mnt/sda1/share/"
+
 
 typedef struct conexion
 {
+   std::string ip;
+   std::string port;
+   bool upload;	
+   bool finalizado;
    bool primero;
    char buf[1025]; 
-   const char* filename; 
+   std::string filename; 
    FILE *file;   
    int off; 
    int sent;
@@ -71,7 +78,45 @@ typedef struct conexion
    int total;
 } conexion;
 
+
 client * this_is_me;
+
+std::string showShares(map<std::string, int> c)
+{
+	std::string s = "";
+ 	for(std::map<std::string, int> ::const_iterator it = c.begin(); it != c.end(); it++)
+    {	
+		    ostringstream ss;
+		    ss << it->second;
+		    std::string t = ss.str();			
+			s += "File: " + string(it->first) + "      " + t + "bytes\n\n";			
+		
+	}
+	if (s == "")
+		s = "La lista esta vacia\n";
+	return s;
+}
+
+std::string showStats (bool upload, map<int, conexion *> c)
+{
+	std::string s = "";
+ 	for(std::map<int, conexion *>::const_iterator it = c.begin(); it != c.end(); it++)
+    {	
+		if (!(it->second->finalizado))
+		{
+		    ostringstream ss;
+		    ss << it->second->total;
+		    std::string t = ss.str();			
+			
+			s += "Downlading From: " + it->second->ip + "@" + it->second->port + "\n";
+			s += "File: " + string(it->second->filename) + "      " + t + "bytes\n\n";			
+		}
+	}
+	if (s == "")
+		s = "La lista esta vacia\n";
+	return s;
+}
+
 
 int new_console_pos (struct pollfd fds[MAX_CONN],int nfds, int fd)
 {
@@ -101,7 +146,8 @@ void close_client(struct pollfd * my_fds, int num_fds){
 void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 	
    conexion * info;
-   map<int, conexion *> conexions; 
+   map<int, conexion *> conexions;
+   map<std::string, int> shares;  
    
    map<int,string> archivos;
    archivos[6667] = "Love.mp3";
@@ -113,6 +159,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
    archivos_rec[6668] = "Mendeley_rec.exe";  
    archivos_rec[6669] = "This.avi_rec.exe"; 	
    
+   bool serv = true;
    bool eliminar = false;
    bool order_fds = false;
    int console,console_fds;
@@ -180,8 +227,10 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 	          if (console != -1){
 	           console = new_console_pos(my_fds,num_fds,console_fds);
 	           cout << "console ahora es " <<  console << "\n";
+	           
 			  }
-         }     
+         }    
+          
          
          //printf("%s","if (poll(my_fds, num_fds, -1) == -1)\n");
          if (poll(my_fds, num_fds, -1) == -1)
@@ -227,10 +276,29 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 					    info->primero = true;  
 					    info->off = 0;
 					    info->leer = true;
+					    info->upload = true;
+					    info->finalizado = false;					    
 					    cout<<getFilename(this_is_me,out)<< "\n";
-					    info->filename = (string(UPLOADPATH) + getFilename(this_is_me,out)).c_str();	
+					    
+					    std::string name = getFilename(this_is_me,out);
+					    info->filename = (string(UPLOADPATH) + name);
+					    cout << "info->filename " <<  info->filename << "\n";
+					    
+					    //encontrar ip - puerto
+					    std::string ip = inet_ntoa(their_addr.sin_addr);
+					    int p = (int) ntohs(their_addr.sin_port);
+					    
+					    
+					    ostringstream ss;
+					    ss << p;
+					    std::string port = ss.str();
+					    					    
+				        info->ip = ip;
+						info->port = port;					    
+					    //addUpload(this_is_me,ip,port,new_conn->fd,name);
 
 				        //Add it to the poll call
+
 				        my_fds[num_fds] = *new_conn;
 				        num_fds++;
     			 }
@@ -245,6 +313,8 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
     					if (console != -1)
     					{
 							cout << "La consola del cliente ya se encuentra abierta \n";
+                            std::string aux = "Ya una consola del cliente abierta\n";
+                            send(con_sock, aux.c_str(),aux.size(), 0);							
 							close (con_sock);
 						}
 						else
@@ -266,11 +336,16 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
     			 }
 
 
-    			 if ((i == 2) && (curr->revents != 0)) {
+    			 if ((i == 2) && (serv) && (curr->revents != 0)) {
 					printf("Nueva respuesta del tracker\n\r");    		
 
 					char data[MAX_MSG_SIZE];
                 	int r_data_size = recv(my_fds[2].fd, data, MAX_MSG_SIZE, 0);
+                	if (r_data_size == 0) {
+						eliminar = true;
+					}
+					else
+					{						
                 	data[r_data_size]='\0';
                 	cout<<"El tracker responde:"<< data<<"\n";
 
@@ -337,11 +412,18 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 					    info->off = 0;
 					    info->leer = true;
 					    info->total = 0;
+						info->upload = false;
+					    info->finalizado = false;
+					    //info->ip = ip;
+						//info->port = port;
+					    getPeerInfo (new_conn->fd,info->ip, info->port);
+					    //addDownload(this_is_me,ip,port,new_conn->fd,filenames.front());
 					    
 					    //obtengo filename
-					    info->filename = (string(DOWNLOADPATH) + filenames.front()).c_str();
+					    info->filename = (string(DOWNLOADPATH) + filenames.front());
 					    filenames.pop();
 					}
+				   }
     			 }
     			 
     				
@@ -356,7 +438,9 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				  }
 				  else
 				  {				                         	             
-					  char data[MAX_BUFF_SIZE];
+					  cout<<"ingrese consola\n";
+					  cout<<"revents consola "<< curr->revents << "\n";
+		    		  char data[MAX_BUFF_SIZE];
 			          int size = recv(curr->fd, data, MAX_BUFF_SIZE, 0);
 			          
 			          if (size == 0) {
@@ -382,20 +466,31 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 					              string command = splitV[0];
 		
 					              string toSend="";
-		        				  
 				                  if (command.find("show") != std::string::npos) { //show command
 				                    string param =splitV.size() > 1 ? splitV[1] : "";
 				                    //cout <<"param:#"<<param<<"#\n";
 				                    if (param.size() > 0) {
 		
 				                      if (param.find("share") != std::string::npos) { //"show share" muestra todos los archivos compartidos y los bytes transmitidos
-				                          print_shared_files(this_is_me);
+				                           std::string aux = showShares(shares);
+				                           cout << "List shares\n";
+				                           cout << aux;
+				                           send(curr->fd, aux.c_str(),aux.size(), 0);
+				                          //print_shared_files(this_is_me);
 				                      }
 				                      else if (param.find("downloads") != std::string::npos) { //"show downloads" muestra todas las descargas actuales para este cliente, junto con la dir del uploader y bytes descargados
-				                          print_downloads(this_is_me);
+				                           std::string aux = showStats(false,conexions);
+				                           cout << "List downloads\n";
+				                           cout << aux;
+				                           send(curr->fd, aux.c_str(),aux.size(), 0);
+				                          //print_downloads(this_is_me);
 				                      }
 				                      else if (param.find("uploads") != std::string::npos) { //"show uploads" muestra todas las cargas en progreso, junto con la dirección del downloader y los bytes entregados
-				                          print_uploads(this_is_me);
+				                           std::string aux = showStats(true,conexions);
+				                           cout << "List uploads\n";
+				                           cout << aux;
+				                           send(curr->fd, aux.c_str(),aux.size(), 0);
+				                          //print_uploads(this_is_me);
 				                      }
 				                      else perror("Invalid argument for show command");                        
 		
@@ -403,40 +498,45 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				                    }
 				                    else perror("Not enough arguments, need to specify what to show");                        
 				                  }
+				                  else 
+				                  {
 		
-				                  if (command.find("share") != std::string::npos) { //share command			                    
-				                    //cout <<"console command:"<<splitV.size()<<"-"<<command<<"\n";
-				                    string file =splitV.size() > 1 ? splitV[1] : "";
-		
-				                    if (file.size() > 0) {
-				                      
-				                      cout << "file to share:@"<<file<<"@\n";
-				                      share_file(this_is_me,file);      
-				                      
-				                      toSend = "PUBLISH\n"+file+"\n"+getFileMD5(this_is_me,file)+"\r\n";
-				                    }
-				                    else perror("Not enough arguments, need to specify file to share");                        
-				                  }
-				        				  
-		
-				                  if (command.find("download") != std::string::npos) { //download command
-			                   	 	string param =splitV.size() > 1 ? splitV[1] : "";		                   
-				                    if (param.size() > 0) {		                                           
-				                    	string file = param;		                    	
-				                    	toSend = "SEARCH\n"+file;
-				                    	filenames.push (file);
-				                    	if (toSend.size() > 0)                    	
-											download = true;
-		
-				                    }
-				                    else perror("Not enough arguments, need to specify what to show");    
-				                  }
-		
-				                  if (auxConsole.compare("quit")==0) {         
-				                    //delete this_is_me;   
-				                    cout << "Cerrando cliente.. \n";
-				                    exit(0);
-				                  }
+					                  if (command.find("share") != std::string::npos) { //share command			                    
+					                    //cout <<"console command:"<<splitV.size()<<"-"<<command<<"\n";
+					                    string file =splitV.size() > 1 ? splitV[1] : "";
+			
+					                    if (file.size() > 0) {
+					                      
+					                      cout << "file to share:@"<<file<<"@\n";
+					                      share_file(this_is_me,file);
+					                      shares[(string(UPLOADPATH) + file)] = 0;    
+					                      
+					                      toSend = "PUBLISH\n"+file+"\n"+getFileMD5(this_is_me,file)+"\r\n";
+					                    }
+					                    else perror("Not enough arguments, need to specify file to share");                        
+					                  }
+					        				  
+			
+					                  if (command.find("download") != std::string::npos) { //download command
+					                    cout << "Entre a downloads.. \n";
+				                   	 	string param =splitV.size() > 1 ? splitV[1] : "";		                   
+					                    if (param.size() > 0) {		                                           
+					                    	string file = param;		                    	
+					                    	toSend = "SEARCH\n"+file;
+					                    	filenames.push (file);
+					                    	if (toSend.size() > 0)                    	
+												download = true;
+			
+					                    }
+					                    else perror("Not enough arguments, need to specify what to show");    
+					                  }
+			
+					                  if (auxConsole.compare("quit")==0) {         
+					                    //delete this_is_me;   
+					                    cout << "Cerrando cliente.. \n";
+					                    exit(0);
+					                  }
+							     }
 				                  //guardo el nombre del filename		                  
 				                  
 		                                              
@@ -455,7 +555,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 			   }
 		   }
     			   
-			  if ((i != console) && (i > 2) && (curr->revents != 0))
+			  if ((i != console) && (((i > 2) && serv) || ((i > 1) && !serv)) && (curr->revents != 0))
 			   {
 				  //nuevo  
 					info = conexions[curr->fd];
@@ -477,7 +577,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 							    cout << "primero rec" << "\n";
 							    info->primero = false;							    
 							    //info->filename = archivos_rec[port_console].c_str();
-							    info->file = fopen(info->filename, "wb"); 
+							    info->file = fopen((info->filename).c_str(), "wb"); 
 							    if (!info->file)
 							    {
 									cout << info->filename << cout << " No se pudo abrir el archivo para escribir" << "\n";
@@ -504,8 +604,9 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 						        }
 						        else
 						        {	
+									//updateDownload(this_is_me,curr->fd,info->sent,info->filename);
 									cout << info->filename << cout << " recibi " << info->rval << " bytes" << "\n";
-									info->total += info->rval;
+									info->total += info->rval;									
 									cout << info->filename << cout << " total recibido " << info->total << " bytes" << "\n";						
 							        if (info->rval == 0)
 							        {
@@ -544,7 +645,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 							    cout << "primero" << "\n";
 							    info->primero = false;
 							    //info->filename = archivos[port_console].c_str();
-							    info->file = fopen(info->filename, "rb"); 
+							    info->file = fopen((info->filename).c_str(), "rb"); 
 							    if (!info->file)
 							    {
 									cout << info->filename << cout << "No se puede abrir el archivo para leer" << "\n";
@@ -596,8 +697,10 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 									   }
 									   else
 									   {
+										   //updateUpload(this_is_me,curr->fd,info->sent,info->filename);
 										   cout << info->filename << cout << " envie " << info->sent << "bytes" << "\n";
 										   info->total += info->sent;
+										   shares[info->filename] += info ->sent;
 										   cout << info->filename << cout << " voy enviando " << info->total << "bytes" << "\n";		
 										   info->off += info->sent;
 										   if (info->off >= info->rval){	
@@ -617,7 +720,7 @@ void processPeerToPeer(int port_accept,int port_console,int serv_socket) {
 				  } 	
 				if (eliminar)
 				{	 
-					conexions.erase(curr->fd);	 
+					info->finalizado = true;	 
 				    delete (info);					  
 				}					  
 		  		   

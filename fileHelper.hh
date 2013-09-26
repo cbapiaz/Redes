@@ -12,3 +12,4 @@ unsigned long get_size_by_fd(int fd);
 string getMD5(string file, int &fd,unsigned long &size);
 
 #endif
+

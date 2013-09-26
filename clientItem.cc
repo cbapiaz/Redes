@@ -67,6 +67,8 @@ typedef struct trackerClient
 
 
 #define BASE_DIR "share/"
+//#define BASE_DIR "/mnt/sdc1/share/"
+
 /** create a new client */
 client * client_create (string ip, string port)
 {
@@ -280,9 +282,6 @@ string getcPort (trackerClient *cli){
 	return cli->port;
 }
 
-void remove_client(map<int,trackerClient*> &trackerClients, int fd) {
-	trackerClients.erase(fd);
-}
 
 
 /******CLIENT TO CLIENT METHODS*******/

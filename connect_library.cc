@@ -46,6 +46,26 @@ static void error(const char *msg)
     exit(0);
 }
 
+static void getPeerInfo (int s, std::string &ip, std::string &port)
+{
+	ip = "";
+	port = "";
+	struct sockaddr_in their_addr;
+	socklen_t addr_len = sizeof(their_addr);
+	int err = getpeername(s, (struct sockaddr *) &their_addr, &addr_len);
+	if (err != 0) {
+	   error("getPeerInfo");	   
+	}
+	else{
+	    ip = inet_ntoa(their_addr.sin_addr);
+	    int p = (int) ntohs(their_addr.sin_port);    
+	    
+	    ostringstream ss;
+	    ss << p;
+	    port = ss.str();
+	}	
+}
+
 static int connect_socket(const char* host, char* port)
 {
     int sockfd, portno;
@@ -209,3 +229,4 @@ static void choosePeer( vector<std::string> list, std::string &ip, std::string &
 	port = s.substr(pos+1);
 
 }
+

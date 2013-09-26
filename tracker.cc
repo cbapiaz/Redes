@@ -273,11 +273,11 @@ void pollserver(int port_accept) {
 					  }
 				  }
 			   }
-		 if (eliminar)	  { 
-               remove_client(clients,curr->fd);
-			   curr->fd = -1;
-
-            }
+		 if (eliminar)
+		 {	   
+			 clients.erase(curr->fd);
+			 curr->fd = -1;
+		 }
 		 eliminar = false;	
          }
      }
